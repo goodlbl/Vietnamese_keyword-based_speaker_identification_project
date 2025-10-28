@@ -1,22 +1,26 @@
-from django.shortcuts import render, redirect
-from .models import ButtonState
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import MemberRecord
+import json
 
 def home(request):
-    # Khởi tạo 6 nút nếu chưa có
-    if ButtonState.objects.count() == 0:
-        for i in range(1, 7):
-            ButtonState.objects.create(index=i, state=False)
+    return render(request, 'member_registing_page/index.html')
 
-    buttons = ButtonState.objects.all().order_by('index')
+@csrf_exempt
+def submit_all(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        buttons = json.loads(request.POST.get('buttons'))  # chuyển từ JSON string sang list
 
-    return render(request, 'member_registing_page/index.html', {'buttons': buttons})
+        record = MemberRecord.objects.create(name=name, buttons=buttons)
 
+        for i in range(1,4):
+            audio = request.FILES.get(f'audio{i}')
+            if audio:
+                setattr(record, f'audio{i}', audio)
 
-def toggle_button(request, idx):
-    try:
-        btn = ButtonState.objects.get(index=idx)
-        btn.state = not btn.state
-        btn.save()
-    except ButtonState.DoesNotExist:
-        pass
-    return redirect('home')  # quay lại trang chính
+        record.save()
+        return JsonResponse({'status': 'ok'})
+    
+    return JsonResponse({'error': 'invalid request'}, status=400)

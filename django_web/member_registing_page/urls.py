@@ -3,5 +3,5 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('toggle/<int:idx>/', views.toggle_button, name='toggle_button'),
+    path('submit_all/', views.submit_all, name='submit_all'),
 ]
