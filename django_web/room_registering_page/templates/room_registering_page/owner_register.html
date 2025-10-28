@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quad Team</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f2f2f2;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .name-input {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .name-input input {
+            width: 60%;
+            padding: 12px 15px;
+            font-size: 18px;
+            border: 2px solid #007BFF;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .audio-section {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px auto;
+            width: 90%;
+        }
+
+        .audio-box {
+            background-color: white;
+            border: 2px solid #007BFF;
+            border-radius: 12px;
+            padding: 20px;
+            width: 30%;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .audio-box h3 {
+            margin-top: 0;
+            color: #007BFF;
+        }
+
+        .audio-box button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .audio-box button.recording {
+            background-color: red;
+        }
+
+        .corner-button {
+            position: fixed;
+            bottom: 20px;
+            padding: 15px 25px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .bottom-right { right: 20px; background-color: #007BFF; }
+        .bottom-left { left: 20px; background-color: red; }
+    </style>
+</head>
+<body>
+
+<header>Quad team</header>
+
+<!-- ✅ Form gửi trực tiếp -->
+<form id="ownerForm" method="POST" action="{% url 'room_registering_page:create_owner' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Ô nhập tên -->
+    <div class="name-input">
+        <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
+    </div>
+
+    <!-- 3 ô thu âm -->
+    <div class="audio-section">
+        <div class="audio-box" id="rec1">
+            <h3>Sample 1</h3>
+            <button type="button" onclick="toggleRecord(1)">🎙️ Bắt đầu thu</button>
+            <audio controls id="player1" style="display:none;"></audio>
+            <input type="file" id="audioInput1" name="audio1" style="display:none;">
+        </div>
+        <div class="audio-box" id="rec2">
+            <h3>Sample 2</h3>
+            <button type="button" onclick="toggleRecord(2)">🎙️ Bắt đầu thu</button>
+            <audio controls id="player2" style="display:none;"></audio>
+            <input type="file" id="audioInput2" name="audio2" style="display:none;">
+        </div>
+        <div class="audio-box" id="rec3">
+            <h3>Sample 3</h3>
+            <button type="button" onclick="toggleRecord(3)">🎙️ Bắt đầu thu</button>
+            <audio controls id="player3" style="display:none;"></audio>
+            <input type="file" id="audioInput3" name="audio3" style="display:none;">
+        </div>
+    </div>
+
+    <!-- Nút submit -->
+    <button type="submit" class="corner-button bottom-right">Enter</button>
+    <button type="button" class="corner-button bottom-left" onclick="goBack()">Quit</button>
+
+</form>
+
+<script>
+let recorders = {};
+let audioChunks = {};
+let streams = {};
+
+async function toggleRecord(id) {
+    const btn = document.querySelector(`#rec${id} button`);
+    const player = document.querySelector(`#player${id}`);
+    const input = document.querySelector(`#audioInput${id}`);
+
+    if (!recorders[id]) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streams[id] = stream;
+            const recorder = new MediaRecorder(stream);
+            audioChunks[id] = [];
+
+            recorder.ondataavailable = e => audioChunks[id].push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
+                const file = new File([blob], `sample${id}.webm`, { type: 'audio/webm' });
+
+                // ✅ Gán file vào input (để Django nhận)
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+
+                const url = URL.createObjectURL(blob);
+                player.src = url;
+                player.style.display = 'block';
+            };
+
+            recorder.start();
+            recorders[id] = recorder;
+            btn.textContent = "⏹ Dừng thu";
+            btn.classList.add("recording");
+        } catch (err) {
+            alert("Không truy cập được micro: " + err.message);
+        }
+    } else {
+        recorders[id].stop();
+        streams[id].getTracks().forEach(track => track.stop());
+        recorders[id] = null;
+        btn.textContent = "🎙️ Bắt đầu thu";
+        btn.classList.remove("recording");
+    }
+}
+
+function resetAll() {
+    document.getElementById("ownerForm").reset();
+    alert("Đã reset toàn bộ.");
+}
+function goBack() {
+    window.history.back(); // ✅ Quay lại trang trước
+}
+
+function resetAll() {
+    document.getElementById("ownerForm").reset();
+    alert("Đã reset toàn bộ.");
+}
+</script>
+</body>
+</html>
