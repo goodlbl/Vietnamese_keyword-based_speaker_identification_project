@@ -10,7 +10,6 @@
             background-color: #f2f2f2;
         }
 
-        /* ---------------- Header ---------------- */
         header {
             background-color: #007BFF;
             color: white;
@@ -20,7 +19,6 @@
             padding: 30px 0;
         }
 
-        /* ---------------- Input box ---------------- */
         .name-input {
             text-align: center;
             margin: 30px 0;
@@ -34,19 +32,44 @@
             outline: none;
         }
 
-        /* ---------------- 3 thanh ngang màu ---------------- */
-        .color-bars {
+        .audio-section {
             display: flex;
-            width: 100%;
-            height: 50px;
+            justify-content: space-around;
+            margin: 20px auto;
+            width: 90%;
         }
-        .bar1 { background-color: #FF5733; flex: 1; }
-        .bar2 { background-color: #33FF57; flex: 1; }
-        .bar3 { background-color: #3357FF; flex: 1; }
+
+        .audio-box {
+            background-color: white;
+            border: 2px solid #007BFF;
+            border-radius: 12px;
+            padding: 20px;
+            width: 30%;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .audio-box h3 {
+            margin-top: 0;
+            color: #007BFF;
+        }
+
+        .audio-box button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .audio-box button.recording {
+            background-color: red;
+        }
 
         .spacer { height: 40px; }
 
-        /* ---------------- 6 nút ---------------- */
         .button-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -54,7 +77,7 @@
             width: 60%;
             margin: 0 auto;
         }
-        .button-grid form { margin: 0; }
+
         .button-grid button {
             width: 100%;
             padding: 25px;
@@ -66,7 +89,6 @@
             transition: 0.2s;
         }
 
-        /* Màu gốc 6 nút */
         .btn1 { background-color: #FF5733; }
         .btn2 { background-color: #33FF57; }
         .btn3 { background-color: #3357FF; }
@@ -74,10 +96,8 @@
         .btn5 { background-color: #FF8C33; }
         .btn6 { background-color: #33FFF2; }
 
-        /* Trạng thái "off" tối màu */
         .off { filter: brightness(0.6) grayscale(0.3); }
 
-        /* ---------------- 2 nút góc ---------------- */
         .corner-button {
             position: fixed;
             bottom: 20px;
@@ -88,9 +108,14 @@
             color: white;
             cursor: pointer;
         }
-        .bottom-right { right: 20px; background-color: #007BFF; }  /* xanh */
-        .bottom-left { left: 20px; background-color: red; }         /* đỏ */
+
+        .bottom-right { right: 20px; background-color: #007BFF; }
+        .bottom-left { left: 20px; background-color: red; }
     </style>
+    <script>
+        const csrftoken = '{{ csrf_token }}';
+    </script>
+
 </head>
 <body>
 
@@ -98,33 +123,126 @@
 
 <!-- Ô nhập tên -->
 <div class="name-input">
-    <input type="text" placeholder="Nhập tên của bạn...">
+    <input type="text" id="username" placeholder="Nhập tên của bạn...">
 </div>
 
-<!-- 3 thanh màu -->
-<div class="color-bars">
-    <div class="bar1"></div>
-    <div class="bar2"></div>
-    <div class="bar3"></div>
+<!-- 3 ô thu âm -->
+<div class="audio-section">
+    <div class="audio-box" id="rec1">
+        <h3>Sample 1</h3>
+        <button onclick="toggleRecord(1)">🎙️ Bắt đầu thu</button>
+        <audio controls id="player1" style="display:none;"></audio>
+    </div>
+    <div class="audio-box" id="rec2">
+        <h3>Sample 2</h3>
+        <button onclick="toggleRecord(2)">🎙️ Bắt đầu thu</button>
+        <audio controls id="player2" style="display:none;"></audio>
+    </div>
+    <div class="audio-box" id="rec3">
+        <h3>Sample 3</h3>
+        <button onclick="toggleRecord(3)">🎙️ Bắt đầu thu</button>
+        <audio controls id="player3" style="display:none;"></audio>
+    </div>
 </div>
 
 <div class="spacer"></div>
 
 <!-- 6 nút trạng thái -->
 <div class="button-grid">
-    {% for b in buttons %}
-    <form method="POST" action="{% url 'toggle_button' b.index %}">
-        {% csrf_token %}
-        <button class="btn{{ b.index }} {% if not b.state %}off{% endif %}">
-            Nút {{ b.index }}
-        </button>
-    </form>
-    {% endfor %}
+    <button class="btn1 off" onclick="toggleBtn(1)">Bếp</button>
+    <button class="btn2 off" onclick="toggleBtn(2)">Ti vi</button>
+    <button class="btn3 off" onclick="toggleBtn(3)">Máy lạnh</button>
+    <button class="btn4 off" onclick="toggleBtn(4)">Quạt</button>
+    <button class="btn5 off" onclick="toggleBtn(5)">Quạt trần</button>
+    <button class="btn6 off" onclick="toggleBtn(6)">Đèn</button>
 </div>
 
 <!-- Nút góc -->
-<button class="corner-button bottom-left">Đỏ</button>
-<button class="corner-button bottom-right">Xanh</button>
+<button class="corner-button bottom-left" onclick="resetAll()">Đỏ</button>
+<button class="corner-button bottom-right" onclick="sendAll()">Xanh</button>
 
+<script>
+let recorders = {};
+let audioChunks = {};
+let streams = {};
+let audioBlobs = {};  // lưu 3 file audio
+let buttonStates = [0,0,0,0,0,0];  // 6 nút trạng thái
+
+async function toggleRecord(id) {
+    const btn = document.querySelector(`#rec${id} button`);
+    const player = document.querySelector(`#player${id}`);
+
+    if (!recorders[id]) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streams[id] = stream;
+            const recorder = new MediaRecorder(stream);
+            audioChunks[id] = [];
+
+            recorder.ondataavailable = e => audioChunks[id].push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
+                audioBlobs[id] = blob;
+                const url = URL.createObjectURL(blob);
+                player.src = url;
+                player.style.display = 'block';
+            };
+
+            recorder.start();
+            recorders[id] = recorder;
+            btn.textContent = "⏹ Dừng thu";
+            btn.classList.add("recording");
+        } catch (err) {
+            alert("Không truy cập được micro: " + err.message);
+        }
+    } else {
+        recorders[id].stop();
+        streams[id].getTracks().forEach(track => track.stop());
+        recorders[id] = null;
+        btn.textContent = "🎙️ Bắt đầu thu";
+        btn.classList.remove("recording");
+    }
+}
+
+function toggleBtn(i) {
+    const btn = document.querySelector(`.btn${i}`);
+    buttonStates[i-1] = 1 - buttonStates[i-1];
+    btn.classList.toggle("off");
+}
+
+function resetAll() {
+    document.getElementById("username").value = "";
+    buttonStates = [0,0,0,0,0,0];
+    for (let i=1; i<=6; i++) document.querySelector(`.btn${i}`).classList.add("off");
+    audioBlobs = {};
+    alert("Đã reset toàn bộ.");
+}
+
+async function sendAll() {
+    const name = document.getElementById("username").value.trim();
+    if (!name) return alert("Hãy nhập tên trước khi gửi.");
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("buttons", JSON.stringify(buttonStates));
+
+    for (let i=1; i<=3; i++) {
+        if (audioBlobs[i]) formData.append(`audio${i}`, audioBlobs[i], `sample${i}.webm`);
+    }
+
+    const resp = await fetch("{% url 'submit_all' %}", {
+        method: "POST",
+        body: formData,
+        headers: { "X-CSRFToken": "{{ csrf_token }}" }
+    });
+
+
+    if (resp.ok) {
+        alert("✅ Dữ liệu đã được gửi thành công!");
+    } else {
+        alert("❌ Gửi thất bại!");
+    }
+}
+</script>
 </body>
 </html>
