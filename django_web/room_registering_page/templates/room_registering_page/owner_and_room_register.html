@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Quad Team</title>
+    <title>Quad Team - Register Owner & Room</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,12 +19,28 @@
             padding: 30px 0;
         }
 
+        .form-section {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 1rem;
+        }
+
         .name-input {
             text-align: center;
-            margin: 30px 0;
+            margin: 20px 0;
         }
+
         .name-input input {
-            width: 60%;
+            width: 80%;
             padding: 12px 15px;
             font-size: 18px;
             border: 2px solid #007BFF;
@@ -36,16 +52,17 @@
             display: flex;
             justify-content: space-around;
             margin: 20px auto;
-            width: 90%;
+            flex-wrap: wrap;
         }
 
         .audio-box {
-            background-color: white;
+            background-color: #ffffff;
             border: 2px solid #007BFF;
             border-radius: 12px;
             padding: 20px;
             width: 30%;
             text-align: center;
+            margin: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
@@ -68,6 +85,20 @@
             background-color: red;
         }
 
+        .room-inputs {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .room-inputs input {
+            width: 60%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #007BFF;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
         .corner-button {
             position: fixed;
             bottom: 20px;
@@ -85,43 +116,44 @@
 </head>
 <body>
 
-<header>Quad team</header>
+<header>Quad Team</header>
 
-<!-- ✅ Form gửi trực tiếp -->
-<form id="ownerForm" method="POST" action="{% url 'room_registering_page:create_owner' %}" enctype="multipart/form-data">
+<form id="ownerForm" method="POST" enctype="multipart/form-data" 
+      action="{% url 'room_registering_page:create_owner_and_room' %}">
     {% csrf_token %}
 
-    <!-- Ô nhập tên -->
-    <div class="name-input">
-        <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
-    </div>
+    <div class="form-section">
+        <h2>Register Owner</h2>
 
-    <!-- 3 ô thu âm -->
-    <div class="audio-section">
-        <div class="audio-box" id="rec1">
-            <h3>Sample 1</h3>
-            <button type="button" onclick="toggleRecord(1)">🎙️ Bắt đầu thu</button>
-            <audio controls id="player1" style="display:none;"></audio>
-            <input type="file" id="audioInput1" name="audio1" style="display:none;">
+        <!-- Nhập tên -->
+        <div class="name-input">
+            <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
         </div>
-        <div class="audio-box" id="rec2">
-            <h3>Sample 2</h3>
-            <button type="button" onclick="toggleRecord(2)">🎙️ Bắt đầu thu</button>
-            <audio controls id="player2" style="display:none;"></audio>
-            <input type="file" id="audioInput2" name="audio2" style="display:none;">
-        </div>
-        <div class="audio-box" id="rec3">
-            <h3>Sample 3</h3>
-            <button type="button" onclick="toggleRecord(3)">🎙️ Bắt đầu thu</button>
-            <audio controls id="player3" style="display:none;"></audio>
-            <input type="file" id="audioInput3" name="audio3" style="display:none;">
+
+        <!-- 3 ô thu âm -->
+        <div class="audio-section">
+            {% for i in "123" %}
+            <div class="audio-box" id="rec{{ i }}">
+                <h3>Sample {{ i }}</h3>
+                <button type="button" onclick="toggleRecord({{ i }})">🎙️ Bắt đầu thu</button>
+                <audio controls id="player{{ i }}" style="display:none;"></audio>
+                <input type="file" id="audioInput{{ i }}" name="audio{{ i }}" style="display:none;">
+            </div>
+            {% endfor %}
         </div>
     </div>
 
-    <!-- Nút submit -->
+    <div class="form-section">
+        <h2>Register Room</h2>
+        <div class="room-inputs">
+            <input type="text" name="room_number" placeholder="Nhập số phòng (10 chữ số)" maxlength="10" pattern="\d{10}">
+            <br>
+            <input type="password" name="password" placeholder="Nhập mật khẩu">
+        </div>
+    </div>
+
     <button type="submit" class="corner-button bottom-right">Enter</button>
     <button type="button" class="corner-button bottom-left" onclick="goBack()">Quit</button>
-
 </form>
 
 <script>
@@ -146,7 +178,6 @@ async function toggleRecord(id) {
                 const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
                 const file = new File([blob], `sample${id}.webm`, { type: 'audio/webm' });
 
-                // ✅ Gán file vào input (để Django nhận)
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 input.files = dataTransfer.files;
@@ -172,17 +203,8 @@ async function toggleRecord(id) {
     }
 }
 
-function resetAll() {
-    document.getElementById("ownerForm").reset();
-    alert("Đã reset toàn bộ.");
-}
 function goBack() {
-    window.history.back(); // ✅ Quay lại trang trước
-}
-
-function resetAll() {
-    document.getElementById("ownerForm").reset();
-    alert("Đã reset toàn bộ.");
+    window.history.back();
 }
 </script>
 </body>
