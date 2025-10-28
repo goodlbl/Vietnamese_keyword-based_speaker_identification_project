@@ -1,8 +1,13 @@
 from django.db import models
+import json
 
-class ButtonState(models.Model):
-    index = models.IntegerField(unique=True)   # nút thứ mấy (1-6)
-    state = models.BooleanField(default=False) # True = 1, False = 0
+class MemberRecord(models.Model):
+    name = models.CharField(max_length=100)
+    buttons = models.JSONField()  # lưu [0,1,1,0,0,1]
+    audio1 = models.FileField(upload_to='audios/', null=True, blank=True)
+    audio2 = models.FileField(upload_to='audios/', null=True, blank=True)
+    audio3 = models.FileField(upload_to='audios/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Button {self.index}: {int(self.state)}"
+        return f"{self.name} ({self.created_at:%Y-%m-%d %H:%M:%S})"
