@@ -5,7 +5,7 @@ from .models import MemberRecord
 import json
 
 def home(request):
-    return render(request, 'member_registing_page/index.html')
+    return render(request, 'member_registering_page/index.html')
 
 @csrf_exempt
 def submit_all(request):

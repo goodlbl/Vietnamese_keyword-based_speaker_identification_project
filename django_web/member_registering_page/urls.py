@@ -5,3 +5,4 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('submit_all/', views.submit_all, name='submit_all'),
 ]
+ 
