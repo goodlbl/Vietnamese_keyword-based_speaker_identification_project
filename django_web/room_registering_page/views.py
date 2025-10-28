@@ -17,7 +17,7 @@ def create_owner(request):
 
         record.save()
 
-        return redirect('create_room', owner_id=record.id)
+        return redirect('room_registering_page:create_room', owner_id=record.id)
 
     return render(request, 'room_registering_page/owner_register.html')
 

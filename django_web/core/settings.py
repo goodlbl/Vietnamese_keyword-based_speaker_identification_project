@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'member_registering_page',
     'room_registering_page',
+    'main_page',
 ]
 
 MIDDLEWARE = [

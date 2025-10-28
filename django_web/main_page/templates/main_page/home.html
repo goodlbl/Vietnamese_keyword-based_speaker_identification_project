@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang nhập phòng</title>
+</head>
+<body>
+    <h1>Nhập số phòng</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Xác nhận</button>
+    </form>
+
+    <br><hr><br>
+    <!-- Nút dẫn sang app khác -->
+    <a href="/room_registering_page/create_owner/">Tạo phòng mới</a>
+        <button type="button">Tạo phòng mới</button>
+    </a>
+</body>
+</html>

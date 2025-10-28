@@ -88,7 +88,7 @@
 <header>Quad team</header>
 
 <!-- ✅ Form gửi trực tiếp -->
-<form id="ownerForm" method="POST" action="{% url 'create_owner' %}" enctype="multipart/form-data">
+<form id="ownerForm" method="POST" action="{% url 'room_registering_page:create_owner' %}" enctype="multipart/form-data">
     {% csrf_token %}
 
     <!-- Ô nhập tên -->
@@ -120,7 +120,8 @@
 
     <!-- Nút submit -->
     <button type="submit" class="corner-button bottom-right">Enter</button>
-    <button type="button" class="corner-button bottom-left" onclick="resetAll()">Quit</button>
+    <button type="button" class="corner-button bottom-left" onclick="goBack()">Quit</button>
+
 </form>
 
 <script>
@@ -169,6 +170,14 @@ async function toggleRecord(id) {
         btn.textContent = "🎙️ Bắt đầu thu";
         btn.classList.remove("recording");
     }
+}
+
+function resetAll() {
+    document.getElementById("ownerForm").reset();
+    alert("Đã reset toàn bộ.");
+}
+function goBack() {
+    window.history.back(); // ✅ Quay lại trang trước
 }
 
 function resetAll() {
