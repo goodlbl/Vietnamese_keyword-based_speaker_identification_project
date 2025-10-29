@@ -11,7 +11,7 @@ def check_password_view(request, room_id):
         if form.is_valid():
             password = form.cleaned_data['password']
             if password == room.password:
-                return redirect('room_registering_page:create_owner')  # sang trang tiếp theo
+                return redirect('room_registering_page:create_owner')  # Long đổi thành link member_register 
             else:
                 error = "Mật khẩu không đúng."
     else:
