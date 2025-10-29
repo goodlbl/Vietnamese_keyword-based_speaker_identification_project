@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chi tiết phòng {{ room.room_number }}</title>
+</head>
+<body>
+    <h1>Phòng {{ room.room_number }}</h1>
+
+    <ul>
+        <li>ID phòng: {{ room.id }}</li>
+        <li>Tên phòng: {{ room.name }}</li>
+        <li>Sức chứa: {{ room.capacity }}</li>
+        <li>Trạng thái: {{ room.status }}</li>
+    </ul>
+
+    <form method="get" action="{% url 'check_password:check_password_view' room.id %}">
+        <button type="submit">Đăng ký</button>
+    </form>
+
+    <br>
+    <a href="{% url 'main_page:home' %}">← Quay lại trang tìm kiếm</a>
+</body>
+</html>
