@@ -4,7 +4,7 @@ import json
 class MemberRecord(models.Model):
     name = models.CharField(max_length=100)
     room = models.PositiveIntegerField(null=True, blank=True)
-    buttons = models.JSONField()
+    buttons = models.JSONField(default=list([1,1,1,1,1,1]))
     audio1 = models.FileField(upload_to='audios/', null=True, blank=True)
     audio2 = models.FileField(upload_to='audios/', null=True, blank=True)
     audio3 = models.FileField(upload_to='audios/', null=True, blank=True)

@@ -32,6 +32,13 @@
             outline: none;
         }
 
+        .instruction {
+            text-align: center;
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
         .audio-section {
             display: flex;
             justify-content: space-around;
@@ -126,20 +133,25 @@
     <input type="text" id="username" placeholder="Nhập tên của bạn...">
 </div>
 
+<!-- Dòng hướng dẫn -->
+<div class="instruction">
+    Bạn hãy đọc theo các cụm sau đây để làm mẫu so sánh
+</div>
+
 <!-- 3 ô thu âm -->
 <div class="audio-section">
     <div class="audio-box" id="rec1">
-        <h3>Sample 1</h3>
+        <h3>“Quad team ơi”</h3>
         <button onclick="toggleRecord(1)">🎙️ Bắt đầu thu</button>
         <audio controls id="player1" style="display:none;"></audio>
     </div>
     <div class="audio-box" id="rec2">
-        <h3>Sample 2</h3>
+        <h3>“Mở lên Quad team ơi”</h3>
         <button onclick="toggleRecord(2)">🎙️ Bắt đầu thu</button>
         <audio controls id="player2" style="display:none;"></audio>
     </div>
     <div class="audio-box" id="rec3">
-        <h3>Sample 3</h3>
+        <h3>“Quad team ơi thế nào”</h3>
         <button onclick="toggleRecord(3)">🎙️ Bắt đầu thu</button>
         <audio controls id="player3" style="display:none;"></audio>
     </div>
@@ -158,8 +170,8 @@
 </div>
 
 <!-- Nút góc -->
-<button class="corner-button bottom-left" onclick="resetAll()">Quit</button>
-<button class="corner-button bottom-right" onclick="sendAll()">Enter</button>
+<button class="corner-button bottom-left" onclick="resetAll()">Quay lại</button>
+<button class="corner-button bottom-right" onclick="sendAll()">Đăng ký</button>
 
 <script>
 let recorders = {};
@@ -186,16 +198,32 @@ async function toggleRecord(id) {
                 const url = URL.createObjectURL(blob);
                 player.src = url;
                 player.style.display = 'block';
+                player.onplay = () => { 
+                    setTimeout(() => player.pause(), 2500); 
+                };
             };
 
             recorder.start();
             recorders[id] = recorder;
-            btn.textContent = "⏹ Dừng thu";
+            btn.textContent = "⏹ Đang thu...";
             btn.classList.add("recording");
+
+            // Tự dừng sau 2.5s
+            setTimeout(() => {
+                if (recorders[id]) {
+                    recorders[id].stop();
+                    streams[id].getTracks().forEach(track => track.stop());
+                    recorders[id] = null;
+                    btn.textContent = "🎙️ Bắt đầu thu";
+                    btn.classList.remove("recording");
+                }
+            }, 2500);
+
         } catch (err) {
             alert("Không truy cập được micro: " + err.message);
         }
     } else {
+        // Nếu bấm lại khi đang thu thì dừng ngay
         recorders[id].stop();
         streams[id].getTracks().forEach(track => track.stop());
         recorders[id] = null;
@@ -230,12 +258,11 @@ async function sendAll() {
         if (audioBlobs[i]) formData.append(`audio${i}`, audioBlobs[i], `sample${i}.webm`);
     }
 
-    const resp = await fetch("{% url 'submit_all' %}", {
+    const resp = await fetch("/member_registering_page/submit_all/", {
         method: "POST",
         body: formData,
-        headers: { "X-CSRFToken": "{{ csrf_token }}" }
+        headers: { "X-CSRFToken": csrftoken }
     });
-
 
     if (resp.ok) {
         alert("✅ Dữ liệu đã được gửi thành công!");
