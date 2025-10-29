@@ -11,11 +11,12 @@
         {{ form.as_p }}
         <button type="submit">Xác nhận</button>
     </form>
+    {% if message %}
+        <p style="color: red;">{{ message }}</p>
+    {% endif %}
 
     <br><hr><br>
-    <!-- Nút dẫn sang app khác -->
-    <a href="/room_registering_page/create_owner_and_room/">Tạo phòng mới</a>
-        <button type="button">Tạo phòng mới</button>
-    </a>
+        <a href="{% url 'room_registering_page:create_owner_and_room' %}" class="btn btn-primary">Tạo phòng mới</a>
+
 </body>
 </html>
