@@ -23,4 +23,6 @@ urlpatterns = [
     path('', include('main_page.urls')),
     path('member_registering_page/', include('member_registering_page.urls')),
     path('room_registering_page/', include('room_registering_page.urls')),
+    path('check_password/', include('check_password.urls')),
+
 ]

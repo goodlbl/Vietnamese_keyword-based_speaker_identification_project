@@ -1,9 +1,8 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from member_registering_page.models import MemberRecord
 from .models import Room
-import json
 
-def create_owner(request):
+def create_owner_and_room(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         buttons = [1, 1, 1, 1, 1, 1]
@@ -14,35 +13,26 @@ def create_owner(request):
             audio = request.FILES.get(f'audio{i}')
             if audio:
                 setattr(record, f'audio{i}', audio)
-
         record.save()
 
-        return redirect('room_registering_page:create_room', owner_id=record.id)
-
-    return render(request, 'room_registering_page/owner_register.html')
-
-
-def create_room(request, owner_id):
-    owner = get_object_or_404(MemberRecord, id=owner_id)
-
-    if request.method == 'POST':
         room_number = request.POST.get('room_number')
         password = request.POST.get('password')
-        total_members = 1
+
+        if not room_number:
+            room_number = f"R{record.id:04d}" 
+        if not password:
+            password = "1234"
 
         new_room = Room.objects.create(
             room_number=room_number,
             password=password,
-            owner=owner,
-            total_members=total_members
+            owner=record,
+            total_members=1
         )
 
-        owner.room = new_room.id
-        owner.save()
+        record.room = new_room.id
+        record.save()
 
-        return render(request, 'room_registering_page/owner_register.html')
+        return render(request, 'main_page/home.html')
 
-    return render(request, 'room_registering_page/room_register.html', {'owner': owner})
-
-
-
+    return render(request, 'room_registering_page/owner_and_room_register.html')
