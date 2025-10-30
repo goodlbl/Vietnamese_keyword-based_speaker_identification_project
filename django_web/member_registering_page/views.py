@@ -1,6 +1,5 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from .models import MemberRecord
 import json
 from room_registering_page.models import Room
@@ -38,3 +37,10 @@ def submit_all(request):
         return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+def back_to_password(request):
+    room_id = request.session.get("room_id")
+    if room_id:
+        return redirect("check_password:check_password_view", room_id=room_id)
+    else:
+        return redirect("/")
