@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from .models import MemberRecord
 import json
+from django.shortcuts import redirect
 
 def register_view(request):
     return render(request, 'member_registering_page/index.html')
@@ -35,3 +35,11 @@ def submit_all(request):
         return JsonResponse({'success': True, 'user_id': member.id})
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+def back_to_password(request):
+    room_id = request.session.get("room_id")
+    if room_id:
+        return redirect("check_password:check_password_view", room_id=room_id)
+    else:
+        # fallback nếu chưa có trong session
+        return redirect("/")
