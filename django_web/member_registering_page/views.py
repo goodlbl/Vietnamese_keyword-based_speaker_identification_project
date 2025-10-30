@@ -40,7 +40,11 @@ def submit_all(request):
 
 def back_to_password(request):
     room_id = request.session.get("room_id")
-    if room_id:
-        return redirect("check_password:check_password_view", room_id=room_id)
+    room = get_object_or_404(Room, id=room_id)
+
+    if room_id: 
+        return render(request, 'main_page/room_detail.html', {
+        'room': room
+    })
     else:
         return redirect("/")
