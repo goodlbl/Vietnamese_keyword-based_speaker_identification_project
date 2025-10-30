@@ -3,20 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <title>Trang nhập phòng</title>
+    <style>
+        /* 🎨 Reset cơ bản */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3436;
+            font-size: 24px;
+            margin-bottom: 25px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        form input[type="text"],
+        form input[type="number"],
+        form input[type="password"],
+        form select {
+            padding: 10px 15px;
+            border: 1px solid #b2bec3;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        form input:focus, form select:focus {
+            border-color: #0984e3;
+            outline: none;
+        }
+
+        button[type="submit"] {
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #74b9ff;
+        }
+
+        p.message {
+            color: #d63031;
+            margin-top: 10px;
+        }
+
+        a.btn-primary {
+            display: inline-block;
+            margin-top: 25px;
+            text-decoration: none;
+            background-color: #00b894;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        a.btn-primary:hover {
+            background-color: #55efc4;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: #dfe6e9;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Nhập số phòng</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Xác nhận</button>
-    </form>
-    {% if message %}
-        <p style="color: red;">{{ message }}</p>
-    {% endif %}
+    <div class="container">
+        <h1> Nhập số phòng</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Xác nhận</button>
+        </form>
 
-    <br><hr><br>
-        <a href="{% url 'room_registering_page:create_owner_and_room' %}" class="btn btn-primary">Tạo phòng mới</a>
+        {% if message %}
+            <p class="message">{{ message }}</p>
+        {% endif %}
 
+        <hr>
+
+        <a href="{% url 'room_registering_page:create_owner_and_room' %}" class="btn-primary">+ Tạo phòng mới</a>
+    </div>
 </body>
 </html>

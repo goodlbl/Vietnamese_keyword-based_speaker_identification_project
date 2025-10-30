@@ -1,8 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .models import MemberRecord
 import json
-from django.shortcuts import redirect
+from room_registering_page.models import Room
 
 def register_view(request):
     return render(request, 'member_registering_page/index.html')
@@ -22,7 +22,7 @@ def submit_all(request):
 
         member = MemberRecord.objects.create(
             name=name,
-            room=room_id,  # tương ứng với field room trong model
+            room=room_id, 
             buttons=buttons
         )
 
@@ -32,14 +32,19 @@ def submit_all(request):
                 setattr(member, f'audio{i}', file)
         member.save()
 
-        return JsonResponse({'success': True, 'user_id': member.id})
+        redirect_url = f"/room/{room_id}/"
+
+        return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
 def back_to_password(request):
     room_id = request.session.get("room_id")
-    if room_id:
-        return redirect("check_password:check_password_view", room_id=room_id)
+    room = get_object_or_404(Room, id=room_id)
+
+    if room_id: 
+        return render(request, 'main_page/room_detail.html', {
+        'room': room
+    })
     else:
-        # fallback nếu chưa có trong session
         return redirect("/")
