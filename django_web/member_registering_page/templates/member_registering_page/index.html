@@ -254,7 +254,7 @@ async function sendAll() {
     formData.append("name", name);
     formData.append("buttons", JSON.stringify(buttonStates));
 
-    for (let i=1; i<=3; i++) {
+    for (let i = 1; i <= 3; i++) {
         if (audioBlobs[i]) formData.append(`audio${i}`, audioBlobs[i], `sample${i}.webm`);
     }
 
@@ -264,12 +264,16 @@ async function sendAll() {
         headers: { "X-CSRFToken": csrftoken }
     });
 
-    if (resp.ok) {
-        alert("✅ Dữ liệu đã được gửi thành công!");
+    const data = await resp.json();
+
+    if (data.success) {
+        window.location.href = data.redirect_url;  // ✅ chuyển trang
     } else {
-        alert("❌ Gửi thất bại!");
+        alert("❌ Gửi thất bại: " + (data.error || "Lỗi không xác định"));
     }
 }
+
+
 </script>
 </body>
 </html>

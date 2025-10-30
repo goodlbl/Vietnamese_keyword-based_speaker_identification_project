@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from member_registering_page.models import MemberRecord
 from .models import Room
 
@@ -32,7 +32,10 @@ def create_owner_and_room(request):
 
         record.room = new_room.id
         record.save()
+        room = get_object_or_404(Room, id=new_room.id)
 
-        return render(request, 'main_page/home.html')
+        return render(request, 'main_page/room_detail.html', {
+        'room': room
+    })
 
     return render(request, 'room_registering_page/owner_and_room_register.html')

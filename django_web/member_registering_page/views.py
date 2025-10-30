@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import MemberRecord
 import json
+from room_registering_page.models import Room
 
 def register_view(request):
     return render(request, 'member_registering_page/index.html')
@@ -22,7 +23,7 @@ def submit_all(request):
 
         member = MemberRecord.objects.create(
             name=name,
-            room=room_id,  # tương ứng với field room trong model
+            room=room_id, 
             buttons=buttons
         )
 
@@ -32,6 +33,8 @@ def submit_all(request):
                 setattr(member, f'audio{i}', file)
         member.save()
 
-        return JsonResponse({'success': True, 'user_id': member.id})
+        redirect_url = f"/room/{room_id}/"
+
+        return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
