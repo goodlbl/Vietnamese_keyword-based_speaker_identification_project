@@ -173,6 +173,11 @@
 <button class="corner-button bottom-left" onclick="resetAll()">Quay lại</button>
 <button class="corner-button bottom-right" onclick="sendAll()">Đăng ký</button>
 
+<form method="POST" action="/member_registering_page/go_back/" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="corner-button bottom-left">Quay lại</button>
+</form>
+
 <script>
 let recorders = {};
 let audioChunks = {};
@@ -236,14 +241,6 @@ function toggleBtn(i) {
     const btn = document.querySelector(`.btn${i}`);
     buttonStates[i-1] = 1 - buttonStates[i-1];
     btn.classList.toggle("off");
-}
-
-function resetAll() {
-    document.getElementById("username").value = "";
-    buttonStates = [0,0,0,0,0,0];
-    for (let i=1; i<=6; i++) document.querySelector(`.btn${i}`).classList.add("off");
-    audioBlobs = {};
-    alert("Đã reset toàn bộ.");
 }
 
 async function sendAll() {
