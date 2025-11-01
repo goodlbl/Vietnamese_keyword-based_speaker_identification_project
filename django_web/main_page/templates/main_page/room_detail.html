@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết phòng {{ room.room_number }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            width: 420px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3436;
+            margin-bottom: 25px;
+            font-size: 26px;
+        }
+
+        ul {
+            list-style: none;
+            text-align: left;
+            background-color: #f1f2f6;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        ul li {
+            margin: 8px 0;
+            color: #2d3436;
+            font-size: 15px;
+        }
+
+        button[type="submit"] {
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #74b9ff;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 25px;
+            text-decoration: none;
+            color: #636e72;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #0984e3;
+        }
+
+        .back-arrow {
+            font-size: 20px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> Phòng {{ room.room_number }}</h1>
+
+        <ul>
+            <li><strong>ID phòng:</strong> {{ room.id }}</li>
+            <li><strong>Số phòng:</strong> {{ room.room_number }}</li>
+            <li><strong>Thành viên:</strong> {{ room.total_members }}</li>
+        </ul>
+
+        <form method="get" action="{% url 'check_password:check_password_view' room.id %}">
+            <button type="submit">Đăng ký</button>
+        </form>
+
+        <a href="{% url 'main_page:home' %}">
+            <span class="back-arrow">←</span> Quay lại trang tìm kiếm
+        </a>
+    </div>
+</body>
+</html>
