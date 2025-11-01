@@ -1,26 +1,50 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from .models import MemberRecord
 import json
+from room_registering_page.models import Room
 
-def home(request):
+def register_view(request):
     return render(request, 'member_registering_page/index.html')
 
-@csrf_exempt
 def submit_all(request):
     if request.method == 'POST':
+        room_id = request.session.get('room_id')
+        if not room_id:
+            return JsonResponse({'success': False, 'error': 'No room_id in session'}, status=400)
+
         name = request.POST.get('name')
-        buttons = json.loads(request.POST.get('buttons'))  # chuyển từ JSON string sang list
+        if not name:
+            return JsonResponse({'success': False, 'error': 'No name provided'}, status=400)
 
-        record = MemberRecord.objects.create(name=name, buttons=buttons)
+        buttons_json = request.POST.get('buttons')
+        buttons = json.loads(buttons_json) if buttons_json else []
 
-        for i in range(1,4):
-            audio = request.FILES.get(f'audio{i}')
-            if audio:
-                setattr(record, f'audio{i}', audio)
+        member = MemberRecord.objects.create(
+            name=name,
+            room=room_id, 
+            buttons=buttons
+        )
 
-        record.save()
-        return JsonResponse({'status': 'ok'})
-    
-    return JsonResponse({'error': 'invalid request'}, status=400)
+        for i in range(1, 4):
+            file = request.FILES.get(f'audio{i}')
+            if file:
+                setattr(member, f'audio{i}', file)
+        member.save()
+
+        redirect_url = f"/room/{room_id}/"
+
+        return JsonResponse({'success': True, 'redirect_url': redirect_url})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+def back_to_password(request):
+    room_id = request.session.get("room_id")
+    room = get_object_or_404(Room, id=room_id)
+
+    if room_id: 
+        return render(request, 'main_page/room_detail.html', {
+        'room': room
+    })
+    else:
+        return redirect("/")
