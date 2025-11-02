@@ -32,7 +32,7 @@ def submit_all(request):
                 setattr(member, f'audio{i}', file)
         member.save()
 
-        redirect_url = f"/room/{room_id}/"
+        redirect_url = f"/action_room/{room_id}/"
 
         return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
