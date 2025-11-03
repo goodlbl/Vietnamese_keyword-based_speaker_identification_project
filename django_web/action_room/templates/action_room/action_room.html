@@ -1,8 +1,115 @@
-{% block content %}
-<div class="container text-center mt-5">
-    <h2 class="mb-4">🎤 Phòng {{ room.id }} – Ra lệnh điều khiển</h2>
-    <p>Xin chào, bạn đã đăng ký thành công!</p>
-    <p>Bây giờ bạn có thể bắt đầu ra lệnh bằng giọng nói.</p>
-    <button class="btn btn-primary mt-3">Bắt đầu ghi âm lệnh</button>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>🎤 Phòng {{ room.id }} – Giám sát giọng nói 24/24</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            text-align: center;
+            padding: 60px;
+            background: linear-gradient(135deg, #0984e3, #74b9ff);
+            color: white;
+        }
+        h1 { font-size: 28px; margin-bottom: 10px; }
+        #status { margin-top: 20px; font-size: 18px; }
+        #result { margin-top: 25px; font-size: 20px; font-weight: bold; }
+        .ok { color: #00ffb3; }
+        .fail { color: #ff7675; }
+        .pulse { animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎤 Phòng {{ room.id }} – Giám sát giọng nói 24/24</h1>
+    <p>Hệ thống đang hoạt động liên tục, nhận diện giọng nói của bạn mỗi vài giây.</p>
+    <p id="status" class="pulse">🎧 Đang khởi động microphone...</p>
+    <p id="result"></p>
+
+    <script>
+        const status = document.getElementById("status");
+        const result = document.getElementById("result");
+
+        let stream = null;
+        let recording = false;
+        const RECORD_DURATION = 4000;  // ghi 4 giây
+        const LOOP_INTERVAL = 8000;    // chu kỳ 8 giây/lần
+
+        async function startContinuousListening() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                status.textContent = "🎙️ Hệ thống đang nghe 24/24...";
+                status.classList.add("pulse");
+                startRecordingLoop();
+            } catch (err) {
+                console.error("❌ Không thể truy cập microphone:", err);
+                status.textContent = "❌ Không thể truy cập microphone. Hãy bật quyền mic.";
+                status.classList.remove("pulse");
+            }
+        }
+
+        function startRecordingLoop() {
+            setInterval(async () => {
+                if (recording) return;
+                recording = true;
+
+                // 🗣️ Hiện thông báo hướng dẫn người dùng nói keyword
+                status.textContent = "🎙️ Hãy nói từ khóa của bạn...";
+
+                const mediaRecorder = new MediaRecorder(stream);
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(chunks, { type: "audio/wav" });
+                    const formData = new FormData();
+                    formData.append("audio", blob, "voice.wav");
+
+                    try {
+                        const res = await fetch("{% url 'action_room:verify_voice' %}", {
+                            method: "POST",
+                            body: formData
+                        });
+                        const data = await res.json();
+
+                        // 🧠 Phản hồi từ Flask API
+                        if (data.similarity && data.similarity >= 0) {
+                            const sim = parseFloat(data.similarity);
+                            if (sim >= 0.8) {
+                                // ✅ Người hợp lệ
+                                const name = data.name || "Người dùng hợp lệ";
+                                const role = data.role || "Được phép truy cập";
+                                result.innerHTML = `✅ <span class="ok">${name} – Quyền: ${role}</span><br>
+                                                     (Độ khớp ${(sim*100).toFixed(1)}%)`;
+                            } else {
+                                // ❌ Người lạ
+                                result.innerHTML = `🚫 <span class="fail">Người lạ – Không có quyền truy cập</span><br>
+                                                     (Độ khớp ${(sim*100).toFixed(1)}%)`;
+                            }
+                        } else {
+                            result.innerHTML = `⚠️ ${data.error || "Không thể nhận dạng"}`;
+                        }
+
+                    } catch (err) {
+                        console.error("⚠️ Lỗi gửi API:", err);
+                        result.textContent = "⚠️ Không thể kết nối đến server Flask.";
+                    }
+
+                    recording = false;
+                    status.textContent = "🎧 Hệ thống tiếp tục nghe...";
+                };
+
+                mediaRecorder.start();
+                setTimeout(() => mediaRecorder.stop(), RECORD_DURATION);
+            }, LOOP_INTERVAL);
+        }
+
+        // 🚀 Tự khởi động khi trang load
+        window.addEventListener("load", startContinuousListening);
+    </script>
+</body>
+</html>
