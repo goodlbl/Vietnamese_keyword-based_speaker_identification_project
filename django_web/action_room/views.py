@@ -13,7 +13,7 @@ MODEL2_API_URL = "http://127.0.0.1:5000/predict"
 def action_room_view(request, room_id):
     """Hiển thị trang điều khiển của từng phòng"""
     room = get_object_or_404(Room, id=room_id)
-    return render(request, 'action_room/action_room.html', {'room': room})
+    return render(request, 'action_room/action_room copy.html', {'room': room})
 
 
 @csrf_exempt 
