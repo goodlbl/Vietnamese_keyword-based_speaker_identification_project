@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>🎤 Phòng {{ room.id }} – Giám sát giọng nói 24/24</title>
-    <style>
+    <style> 
         body {
             font-family: "Segoe UI", sans-serif;
             text-align: center;
@@ -14,13 +14,38 @@
         h1 { font-size: 28px; margin-bottom: 10px; }
         #status { margin-top: 20px; font-size: 18px; }
         #result { margin-top: 25px; font-size: 20px; font-weight: bold; }
+
         .ok { color: #00ffb3; }
         .fail { color: #ff7675; }
+
         .pulse { animation: pulse 1s infinite; }
+
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
             100% { opacity: 1; }
+        }
+
+        /* 🎯 Nút đăng ký */
+        .register-btn {
+            margin-top: 35px;
+            background-color: #00cec9;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 28px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .register-btn:hover {
+            background-color: #55efc4;
+            transform: scale(1.05);
+        }
+
+        form {
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -29,6 +54,11 @@
     <p>Hệ thống đang hoạt động liên tục, nhận diện giọng nói của bạn mỗi vài giây.</p>
     <p id="status" class="pulse">🎧 Đang khởi động microphone...</p>
     <p id="result"></p>
+
+    <!-- ✅ Nút Đăng ký -->
+    <form method="get" action="{% url 'check_password:check_password_view' room.id %}">
+        <button type="submit" class="register-btn">📝 Đăng ký</button>
+    </form>
 
     <script>
         const status = document.getElementById("status");
@@ -113,3 +143,4 @@
     </script>
 </body>
 </html>
+

@@ -13,7 +13,7 @@ def home(request):
             room = Room.objects.filter(room_number=room_number).first()
 
             if room:
-                return redirect(reverse('main_page:room_detail', args=[room.id]))
+                return redirect(reverse('action_room:action_room_view', args=[room.id]))
             else:
                 message = f"Phòng {room_number} chưa được tạo."
     else:
@@ -25,7 +25,7 @@ def home(request):
     })
 
 
-def room_detail(request, room_id):
+def room_detail(request, room_id): 
     room = get_object_or_404(Room, id=room_id)
 
     return render(request, 'main_page/room_detail.html', {

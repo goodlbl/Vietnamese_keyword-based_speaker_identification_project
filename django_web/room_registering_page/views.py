@@ -34,7 +34,7 @@ def create_owner_and_room(request):
         record.save()
         room = get_object_or_404(Room, id=new_room.id)
 
-        return render(request, 'main_page/room_detail.html', {
+        return render(request, 'action_room/action_room.html', {
         'room': room
     })
 
