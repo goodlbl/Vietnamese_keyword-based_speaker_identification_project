@@ -339,44 +339,36 @@
                     stopListening();
 
                     try {
-                        // 👉 1. Chuyển audioChunk hiện tại thành file WAV để gửi qua Flask
+                        // 👉 1. Chuyển audio hiện tại thành WAV Blob
                         const wavBlob = await exportWavBlob(audioChunk, audioContext.sampleRate);
 
-                        // 👉 2. Gửi file WAV sang Flask Model2
+                        // 👉 2. Gửi thẳng tới Django
                         const formData = new FormData();
-                        formData.append("audio", wavBlob, "keyword_detected.wav");
+                        formData.append("audio", wavBlob, "captured.wav");
                         formData.append("room_id", ROOM_ID);
-
-                        formData.append("room_id", "{{ room.id }}"); // gửi id phòng để Django truy xuất audio mẫu
 
                         const response = await fetch("/action_room/verify_voice/", {
                             method: "POST",
                             body: formData
                         });
+
                         const data = await response.json();
 
-                        // 👉 3. Hiển thị kết quả từ Flask
-                        if (data.is_match) {
-                            updateStatus(
-                                `✅ Giọng nói KHỚP người đăng ký!<br>
-                                Score: ${(data.score * 100).toFixed(2)}%`,
-                                "success"
-                            );
-
-                            // Ví dụ: sau 2 giây chuyển sang trang khác
-                            setTimeout(() => {
-                                window.location.href = "/room/authorized/";
-                            }, 2000);
+                        // 👉 3. Hiển thị kết quả trả về từ Model2
+                        if (data.error) {
+                            updateStatus(`❌ Lỗi: ${data.error}`, "error");
                         } else {
                             updateStatus(
-                                `⚠️ Giọng nói KHÔNG khớp.<br>
-                                Score: ${(data.score * 100).toFixed(2)}%`,
-                                "error"
+                                `🎤 Giọng người nói: <strong>${data.owner}</strong><br>
+                                🔹 Similarity: <strong>${(data.similarity * 100).toFixed(2)}%</strong><br>
+                                🔹 Kết quả: <strong>${data.is_match ? "✅ Khớp" : "❌ Không khớp"}</strong>`,
+                                data.is_match ? "success" : "error"
                             );
                         }
+
                     } catch (err) {
-                        console.error("Lỗi gửi Flask:", err);
-                        updateStatus(`Lỗi khi gọi Flask API: ${err.message}`, "error");
+                        console.error("Lỗi khi gửi Flask:", err);
+                        updateStatus(`🔥 Lỗi khi xác thực giọng nói: ${err.message}`, "error");
                     }
                 } else {
                     // Vẫn đang nghe

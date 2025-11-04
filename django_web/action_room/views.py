@@ -2,14 +2,12 @@ import requests
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from room_registering_page.models import Room
+from member_registering_page.models import MemberRecord
 from django.views.decorators.csrf import csrf_exempt
-import tempfile
-import os
+import numpy as np, json
 
-
-# ✅ URL API model2 — nếu dùng Cloudflare Tunnel, đổi URL tại đây
+# ✅ Flask API URL (điểm tới /predict)
 MODEL2_API_URL = "http://127.0.0.1:5000/predict"
-# MODEL2_API_URL = "https://voice-verifier-tuan.cloudflareTunnel.com/predict"
 
 def action_room_view(request, room_id):
     """Hiển thị trang điều khiển của từng phòng"""
@@ -17,7 +15,7 @@ def action_room_view(request, room_id):
     return render(request, 'action_room/action_room copy.html', {'room': room})
 
 
-@csrf_exempt 
+@csrf_exempt
 def verify_voice(request):
     if request.method == "POST":
         audio_file = request.FILES.get("audio")
@@ -30,47 +28,39 @@ def verify_voice(request):
 
         # ✅ Lấy thông tin phòng & chủ phòng
         room = get_object_or_404(Room, id=room_id)
-        owner = room.owner
+        owner: MemberRecord = room.owner
 
-        # ✅ Lấy 3 file mẫu của chủ phòng
-        registered_links = []
+        # ✅ Đọc 3 embedding 192-dim từ DB
+        emb_list = []
         for i in range(1, 4):
-            audio_field = getattr(owner, f"audio{i}", None)
-            if audio_field and hasattr(audio_field, "url"):
-                abs_path = request.build_absolute_uri(audio_field.url)
-                registered_links.append(abs_path)
+            emb_bytes = getattr(owner, f"audio{i}", None)
+            if emb_bytes:
+                emb = np.frombuffer(emb_bytes, dtype=np.float32)
+                emb_list.append(emb.tolist())
 
-        if not registered_links:
-            return JsonResponse({"error": "Không tìm thấy audio mẫu cho chủ phòng"}, status=404)
+        if not emb_list:
+            return JsonResponse({"error": "Không có embedding mẫu cho chủ phòng"}, status=404)
 
-        # ✅ Lưu tạm file audio gửi sang Flask
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-            for chunk in audio_file.chunks():
-                tmp.write(chunk)
-            tmp_path = tmp.name
-
+        # ✅ Gửi file test + embedding mẫu sang Flask /predict
         try:
-            with open(tmp_path, "rb") as f:
-                files = {"audio": f}
-                data = {
-                    "owner_name": owner.name,
-                    "registered_links": ",".join(registered_links)
-                }
-                res = requests.post(MODEL2_API_URL, files=files, data=data)
-                response_data = res.json()
+            files = {"audio": audio_file}
+            data = {"ref_embeddings": json.dumps(emb_list)}
 
-            # ✅ Sau khi đóng file, mới xóa
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
-
-            return JsonResponse(response_data)
+            resp = requests.post(MODEL2_API_URL, files=files, data=data, timeout=60)
+            data = resp.json()
 
         except Exception as e:
-            if os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                except:
-                    pass
             return JsonResponse({"error": f"Lỗi Flask API: {e}"}, status=500)
+
+        # ✅ Kiểm tra phản hồi từ Flask
+        if "score" not in data:
+            return JsonResponse({"error": "Không nhận được score từ Flask", "raw": data}, status=500)
+
+        return JsonResponse({
+            "owner": owner.name,
+            "room_id": room_id,
+            "similarity": round(data["score"], 4),
+            "is_match": data.get("is_match", False)
+        })
 
     return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
