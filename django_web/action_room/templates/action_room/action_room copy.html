@@ -56,7 +56,8 @@
         
         // 1. Đường dẫn model (đã sửa)
         const ONNX_MODEL_PATH = "{% static 'model/voice_model_from_spec.onnx' %}";
-        
+        //  Lấy thông tin phòng từ Django context
+        const ROOM_ID = "{{ room.id }}";
         // 2. Các tham số xử lý (đã sửa)
         const TARGET_SR = 16000;
         const TARGET_LENGTH = 40000; // 2.5 giây * 16000
@@ -289,13 +290,12 @@
         }
 
         // 5. Hàm chạy dự đoán (Async)
-        // Hàm này được gọi bởi setInterval
         async function runInference() {
             if (!isListening) return;
 
             // Tính toán số mẫu ở SR gốc tương đương với 2.5s (40000 mẫu ở 16kHz)
             const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
-            
+
             // Nếu buffer chưa đủ 2.5s, chờ
             if (audioBuffer.length < requiredNativeSamples) {
                 updateStatus("Đang nghe (chờ đủ buffer)...", "loading");
@@ -310,33 +310,74 @@
             updateStatus("Đang phân tích...", "loading");
 
             try {
-                // --- Chạy pipeline (y hệt code cũ) ---
-                
                 // 1. Tạo AudioBuffer object để dùng hàm resample
                 const bufferToResample = audioContext.createBuffer(1, audioChunk.length, audioContext.sampleRate);
                 bufferToResample.copyToChannel(audioChunk, 0);
 
                 // 2. Resample (Async)
                 const resampledData = await resampleAudio(bufferToResample, TARGET_SR);
-                
+
                 // 3. Pad/Cut (Async - dù hàm là sync)
                 const processedData = padOrCut(resampledData, TARGET_LENGTH);
-                
+
                 // 4. Tính Spectrogram (Async)
                 const spectrogramTensor = await computeSpectrogram(processedData);
-                
+
                 // 5. Chạy Model (Async)
                 const [prediction, probability] = await runOnnxModel(spectrogramTensor);
 
                 // 6. Kiểm tra kết quả
                 if (prediction === "True" && probability > THRESHOLD) {
-                    // PHÁT HIỆN TỪ KHÓA!
                     updateStatus(
                         `<strong>Phát hiện từ khóa!</strong><br>
-                         Xác suất: ${(probability * 100).toFixed(2)}%`,
-                        "success"
+                        Xác suất: ${(probability * 100).toFixed(2)}%<br>
+                        🔄 Đang gửi tới Model2 (xác thực người nói)...`,
+                        "loading"
                     );
-                    stopListening(); // Dừng lại khi đã phát hiện
+
+                    // Dừng lắng nghe để xử lý
+                    stopListening();
+
+                    try {
+                        // 👉 1. Chuyển audioChunk hiện tại thành file WAV để gửi qua Flask
+                        const wavBlob = await exportWavBlob(audioChunk, audioContext.sampleRate);
+
+                        // 👉 2. Gửi file WAV sang Flask Model2
+                        const formData = new FormData();
+                        formData.append("audio", wavBlob, "keyword_detected.wav");
+                        formData.append("room_id", ROOM_ID);
+
+                        formData.append("room_id", "{{ room.id }}"); // gửi id phòng để Django truy xuất audio mẫu
+
+                        const response = await fetch("/action_room/verify_voice/", {
+                            method: "POST",
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        // 👉 3. Hiển thị kết quả từ Flask
+                        if (data.is_match) {
+                            updateStatus(
+                                `✅ Giọng nói KHỚP người đăng ký!<br>
+                                Score: ${(data.score * 100).toFixed(2)}%`,
+                                "success"
+                            );
+
+                            // Ví dụ: sau 2 giây chuyển sang trang khác
+                            setTimeout(() => {
+                                window.location.href = "/room/authorized/";
+                            }, 2000);
+                        } else {
+                            updateStatus(
+                                `⚠️ Giọng nói KHÔNG khớp.<br>
+                                Score: ${(data.score * 100).toFixed(2)}%`,
+                                "error"
+                            );
+                        }
+                    } catch (err) {
+                        console.error("Lỗi gửi Flask:", err);
+                        updateStatus(`Lỗi khi gọi Flask API: ${err.message}`, "error");
+                    }
                 } else {
                     // Vẫn đang nghe
                     updateStatus(
@@ -347,8 +388,43 @@
                 }
             } catch (e) {
                 updateStatus(`Lỗi khi dự đoán: ${e.message}`, "error");
-                toggleBtn.disabled = false; // Bật lại nút
+                toggleBtn.disabled = false;
             }
+        }
+
+
+        // 🔧 Chuyển mảng Float32Array thành file WAV (16-bit PCM)
+        async function exportWavBlob(float32Array, sampleRate) {
+            // Chuyển float32 → int16
+            const buffer = new ArrayBuffer(44 + float32Array.length * 2);
+            const view = new DataView(buffer);
+
+            // WAV header
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+            writeString(0, "RIFF");
+            view.setUint32(4, 36 + float32Array.length * 2, true);
+            writeString(8, "WAVE");
+            writeString(12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true); // byte rate
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, "data");
+            view.setUint32(40, float32Array.length * 2, true);
+
+            // PCM samples
+            let offset = 44;
+            for (let i = 0; i < float32Array.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+
+            return new Blob([buffer], { type: "audio/wav" });
         }
 
         // Tải model ngay khi trang được mở
