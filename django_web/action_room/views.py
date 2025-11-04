@@ -16,7 +16,7 @@ def action_room_view(request, room_id):
     return render(request, 'action_room/action_room.html', {'room': room})
 
 
-@csrf_exempt
+@csrf_exempt 
 def verify_voice(request):
     if request.method == "POST":
         audio_file = request.FILES.get("audio")
