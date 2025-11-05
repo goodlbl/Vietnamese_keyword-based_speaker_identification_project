@@ -196,13 +196,21 @@
             const melSpec = tf.matMul(powerSpec, melFilterBank); // [frames, 40]
 
             // 5) +1e-4
+<<<<<<< Updated upstream
             const melSpecEps = melSpec.add(1e-5);
+=======
+            const melSpecEps = melSpec.add(1e-4);
+>>>>>>> Stashed changes
 
             // 6) 10*log10(x)
             const logMel = melSpecEps.log().mul(10.0 / Math.log(10.0));
 
             // 7) Chuẩn hóa: (logMel - 25) / 50
+<<<<<<< Updated upstream
             const normMel = logMel.sub(10).div(20.0);
+=======
+            const normMel = logMel.sub(25).div(50.0);
+>>>>>>> Stashed changes
 
             // 8) Transpose => [40, T]
             const finalOut = normMel.transpose([1, 0]);
