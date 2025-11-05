@@ -5,9 +5,10 @@ class MemberRecord(models.Model):
     name = models.CharField(max_length=100)
     room = models.PositiveIntegerField(null=True, blank=True)
     buttons = models.JSONField(default=list([1,1,1,1,1,1]))
-    audio1 = models.FileField(upload_to='audios/', null=True, blank=True)
-    audio2 = models.FileField(upload_to='audios/', null=True, blank=True)
-    audio3 = models.FileField(upload_to='audios/', null=True, blank=True)
+    audio1 = models.BinaryField(null=True, blank=True)
+    audio2 = models.BinaryField(null=True, blank=True)
+    audio3 = models.BinaryField(null=True, blank=True)
+    is_owner = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
