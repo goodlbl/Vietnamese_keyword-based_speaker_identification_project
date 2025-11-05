@@ -55,21 +55,21 @@
         // --- CÀI ĐẶT CẤU HÌNH (TỪ FILE CŨ CỦA BẠN) ---
         
         // 1. Đường dẫn model (đã sửa)
-        const ONNX_MODEL_PATH = "{% static 'model/voice_model_from_spec.onnx' %}";
+        const ONNX_MODEL_PATH = "{% static 'model/model_5_345.onnx' %}";
         //  Lấy thông tin phòng từ Django context
         const ROOM_ID = "{{ room.id }}";
         // 2. Các tham số xử lý (đã sửa)
         const TARGET_SR = 16000;
         const TARGET_LENGTH = 40000; // 2.5 giây * 16000
         const N_FFT = 400;           // Phải khớp với model (201 bins)
-        const HOP_LENGTH = 512;
+        const HOP_LENGTH = 160;
         
         // 3. Ngưỡng (Threshold)
         const THRESHOLD = 0.5; // Bạn có thể chỉnh giá trị này (vd: 0.8)
 
         // 4. Khoảng thời gian giữa 2 lần dự đoán (tính bằng mili-giây)
         // Số càng nhỏ, model chạy càng nhiều, càng tốn CPU
-        const INFERENCE_INTERVAL_MS = 750; // Chạy dự đoán mỗi 0.75 giây
+        const INFERENCE_INTERVAL_MS = 250; // Chạy dự đoán mỗi 0.75 giây
 
         // --- Biến toàn cục (Global Variables) ---
         let ortSession;
@@ -116,29 +116,113 @@
             return data;
         }
 
+        function createMelFilterbank(sampleRate, nFft, nMels) {
+            const numFreqs = 1 + nFft / 2;
+            const lowHz = 0;
+            const highHz = sampleRate / 2;
+
+            function hzToMel(hz) {
+                return 2595 * Math.log10(1 + hz / 700);
+            }
+
+            function melToHz(mel) {
+                return 700 * (Math.pow(10, mel / 2595) - 1);
+            }
+
+            const lowMel = hzToMel(lowHz);
+            const highMel = hzToMel(highHz);
+
+            const melPoints = [];
+            for (let i = 0; i < nMels + 2; i++) {
+                melPoints.push(lowMel + (highMel - lowMel) * i / (nMels + 1));
+            }
+
+            const hzPoints = melPoints.map(m => melToHz(m));
+            const binPoints = hzPoints.map(hz =>
+                Math.floor((nFft + 1) * hz / sampleRate)
+            );
+
+            const filterbank = [];
+            for (let m = 1; m <= nMels; m++) {
+                const prev = binPoints[m - 1];
+                const center = binPoints[m];
+                const next = binPoints[m + 1];
+
+                const filter = new Array(numFreqs).fill(0);
+
+                for (let f = prev; f < center; f++) {
+                    filter[f] = (f - prev) / (center - prev);
+                }
+                for (let f = center; f < next; f++) {
+                    filter[f] = (next - f) / (next - center);
+                }
+                filterbank.push(filter);
+            }
+
+            // filterbank: [nMels, numFreqs] → transpose thành [numFreqs, nMels]
+            return tf.tensor2d(filterbank).transpose();
+        }
+
         // 4. Tính Spectrogram (GIỮ NGUYÊN VÀ ĐÃ SỬA CHO N_FFT=400)
         async function computeSpectrogram(data) {
-            const padWidth = N_FFT / 2; // 400 / 2 = 200
-            const inputTensor = tf.tensor1d(data);
-            // 1. Reflect padding [[200, 200]]
-            const paddedTensor = tf.mirrorPad(inputTensor, [[padWidth, padWidth]], 'reflect');
-            // 2. STFT -> [79, 201]
-            const stft = tf.signal.stft(
-                paddedTensor, N_FFT, HOP_LENGTH, N_FFT, tf.signal.hannWindow
-            );
-            // 3. Power Spectrogram
-            const powerSpec = tf.square(tf.abs(stft));
-            // 4. Transpose -> [201, 79]
-            const transposedSpec = powerSpec.transpose([1, 0]);
+            const padWidth = N_FFT / 2; // 200
+            const inputTensor = tf.tensor1d(data); // [N]
 
-            // Dọn dẹp
+            // 1) Reflect pad
+            const padded = tf.mirrorPad(inputTensor, [[padWidth, padWidth]], 'reflect');
+
+            // 2) STFT -> [frames, freq] complex
+            const stft = tf.signal.stft(
+                padded,
+                N_FFT,
+                HOP_LENGTH,
+                N_FFT,
+                tf.signal.hannWindow
+            );
+            const magnitude = tf.abs(stft);          // [frames, freq]
+            const powerSpec = magnitude.square();    // [frames, freq]
+
+            // ✅ 3) Tự tạo Mel filter cho TF.js
+            const numFreqs = 1 + N_FFT / 2; // 201
+            const nMels = 40;
+
+            const melFilterBank = createMelFilterbank(
+                TARGET_SR,
+                N_FFT,
+                nMels
+            );  // shape [numFreqs, nMels]
+
+            // 4) Mel = powerSpec @ melFilterBank
+            const melSpec = tf.matMul(powerSpec, melFilterBank); // [frames, 40]
+
+            // 5) +1e-4
+            const melSpecEps = melSpec.add(1e-4);
+
+            // 6) 10*log10(x)
+            const logMel = melSpecEps.log().mul(10.0 / Math.log(10.0));
+
+            // 7) Chuẩn hóa: (logMel - 25) / 50
+            const normMel = logMel.sub(25).div(50.0);
+
+            // 8) Transpose => [40, T]
+            const finalOut = normMel.transpose([1, 0]);
+
+            const final = finalOut.expandDims(0);
+
+            // cleanup
             inputTensor.dispose();
-            paddedTensor.dispose();
+            padded.dispose();
             stft.dispose();
+            magnitude.dispose();
             powerSpec.dispose();
-            
-            return transposedSpec; // Trả về tensor [201, 79]
-        }
+            melSpec.dispose();
+            melSpecEps.dispose();
+            logMel.dispose();
+            normMel.dispose();
+            finalOut.dispose();
+
+            return final; // [40, T]
+        };
 
         // 5. Chạy Model (GIỮ NGUYÊN)
         async function runOnnxModel(spectrogramTensor) {
@@ -146,9 +230,10 @@
             const dims = spectrogramTensor.shape; // [201, 79]
             // Thêm chiều batch [1, 201, 79]
             const ortTensor = new ort.Tensor('float32', specData, [1, ...dims]);
-            const inputs = { 'spectrogram': ortTensor };
+            const inputs = { 'input': ortTensor };
             const results = await ortSession.run(inputs);
             const logit = results.logits.data[0];
+            console.log(logit)
             const probability = 1 / (1 + Math.exp(-logit));
             const prediction = probability > THRESHOLD ? "True" : "False";
             spectrogramTensor.dispose();
