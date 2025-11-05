@@ -47,6 +47,15 @@
                 <!-- Vùng hiển thị trạng thái/kết quả -->
                 <div id="status" class="mt-6 text-center p-4 rounded-lg bg-gray-50 hidden"></div>
 
+                <!-- ✅ Nút Đăng ký -->
+<form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="flex justify-center mt-8">
+    <button type="submit"
+        class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
+               text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+               transform hover:scale-105 transition duration-300 ease-in-out">
+        📝 Đăng ký
+    </button>
+</form>
             </div>
         </div>
     </div>

@@ -8,6 +8,7 @@ class MemberRecord(models.Model):
     audio1 = models.BinaryField(null=True, blank=True)
     audio2 = models.BinaryField(null=True, blank=True)
     audio3 = models.BinaryField(null=True, blank=True)
+    is_owner = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
