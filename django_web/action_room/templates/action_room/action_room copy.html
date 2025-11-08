@@ -46,7 +46,7 @@
 
                 <!-- Vùng hiển thị trạng thái/kết quả -->
                 <div id="status" class="mt-6 text-center p-4 rounded-lg bg-gray-50 hidden"></div>
-
+                <div id="features-box" class="mt-6 text-center"></div>
                 <!-- ✅ Nút Đăng ký -->
 <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="flex justify-center mt-8">
     <button type="submit"
@@ -91,6 +91,8 @@
 
         const statusDiv = document.getElementById('status');
         const toggleBtn = document.getElementById('toggle-btn');
+        const featuresBox = document.getElementById('features-box');
+
 
         // =================================================================
         // CÁC HÀM CỐT LÕI (GIỮ NGUYÊN TỪ FILE CŨ CỦA BẠN)
@@ -373,7 +375,35 @@
                                 🔹 Kết quả: <strong>${data.is_match ? "✅ Khớp" : "❌ Không khớp"}</strong>`,
                                 data.is_match ? "success" : "error"
                             );
-                        }
+                                if (data.is_match) {
+                                    // ✅ Nếu giọng khớp → hiện chức năng
+                                    if (data.functions && data.functions.length > 0) {
+                                        const colors = ["bg-red-500", "bg-green-500", "bg-blue-500", "bg-pink-500", "bg-orange-500", "bg-teal-500"];
+                                        const html = data.functions.map((f, i) =>
+                                            `<button class="${colors[i % colors.length]} text-white px-4 py-2 rounded-lg m-2 hover:opacity-90">${f}</button>`
+                                        ).join("");
+                                        featuresBox.innerHTML = `
+                                            <div class="mt-4 bg-white p-4 rounded-xl shadow-md">
+                                                <h3 class="text-lg font-bold mb-2">Thiết bị của ${data.owner}</h3>
+                                                ${html}
+                                            </div>
+                                        `;
+                                    } else {
+                                        featuresBox.innerHTML = `<p class="text-gray-500 mt-4 italic">Không có thiết bị nào được phân quyền.</p>`;
+                                    }
+                                } else {
+                                    featuresBox.innerHTML = "";
+                                }
+                            }
+                            toggleBtn.disabled = false;
+                            toggleBtn.textContent = "Bắt đầu nghe";
+                            toggleBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                            toggleBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                            // 🧩 Thêm thông báo phụ mà không xóa kết quả cũ
+                            statusDiv.innerHTML += `<div class="mt-2 text-green-700 font-medium">
+                                Hoàn tất. Bạn có thể bấm <strong>'Bắt đầu nghe'</strong> để tiếp tục.
+                            </div>`;
+                        
 
                     } catch (err) {
                         console.error("Lỗi khi gửi Flask:", err);
