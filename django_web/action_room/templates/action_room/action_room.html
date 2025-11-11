@@ -1,146 +1,444 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>🎤 Phòng {{ room.id }} – Giám sát giọng nói 24/24</title>
-    <style> 
-        body {
-            font-family: "Segoe UI", sans-serif;
-            text-align: center;
-            padding: 60px;
-            background: linear-gradient(135deg, #0984e3, #74b9ff);
-            color: white;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Wake-Word Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    
+    <style>
+        /* Thêm style cho nút bấm disabled */
+        #toggle-btn:disabled {
+            background-color: #9ca3af; /* gray-400 */
+            cursor: not-allowed;
+            animation: none; /* Tắt animation khi disabled */
         }
-        h1 { font-size: 28px; margin-bottom: 10px; }
-        #status { margin-top: 20px; font-size: 18px; }
-        #result { margin-top: 25px; font-size: 20px; font-weight: bold; }
-
-        .ok { color: #00ffb3; }
-        .fail { color: #ff7675; }
-
-        .pulse { animation: pulse 1s infinite; }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        
+        /* 🎨 THÊM MỚI: Animation "breathing" cho nút khi đang nghe */
+        @keyframes pulse-shadow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); /* blue-500 */
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
         }
-
-        /* 🎯 Nút đăng ký */
-        .register-btn {
-            margin-top: 35px;
-            background-color: #00cec9;
-            color: white;
-            font-size: 18px;
-            border: none;
-            border-radius: 12px;
-            padding: 12px 28px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        #toggle-btn.is-listening {
+            /* Khi chạy, chuyển sang màu đỏ và giữ hiệu ứng */
+            background-color: #ef4444; /* red-500 */
+            animation: pulse-shadow 2s infinite;
         }
-
-        .register-btn:hover {
-            background-color: #55efc4;
-            transform: scale(1.05);
-        }
-
-        form {
-            margin-top: 30px;
+        #toggle-btn.is-listening:hover {
+            background-color: #dc2626; /* red-600 */
         }
     </style>
 </head>
-<body>
-    <h1>🎤 Phòng {{ room.id }} – Giám sát giọng nói 24/24</h1>
-    <p>Hệ thống đang hoạt động liên tục, nhận diện giọng nói của bạn mỗi vài giây.</p>
-    <p id="status" class="pulse">🎧 Đang khởi động microphone...</p>
-    <p id="result"></p>
+<body class="bg-gray-100 font-sans antialiased">
+    <div class="container mx-auto p-4 sm:p-8 max-w-2xl">
+        <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-6 flex items-center justify-center">
+                    <span class="mr-3">🎤</span> Real-time Wake Word Detector
+                </h1>
+                
+                <p class="text-center text-gray-600 mb-6">
+                    Nhấn "Bắt đầu" và thử nói từ khóa.
+                    Model đang nghe và phân tích liên tục trong trình duyệt.
+                </p>
 
-    <!-- ✅ Nút Đăng ký -->
-    <form method="get" action="{% url 'check_password:check_password_view' room.id %}">
-        <button type="submit" class="register-btn">📝 Đăng ký</button>
-    </form>
+                <div class="flex justify-center mb-6">
+                    <button id="toggle-btn"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-300"
+                            onclick="toggleListening()">
+                        🎙️ Bắt đầu nghe </button>
+                </div>
+
+                <div class="mt-6 min-h-[150px]">
+                    <div id="status" class="mt-6 text-center p-4 rounded-lg bg-gray-50 hidden"></div>
+                    <div id="features-box" class="mt-6 text-center"></div>
+                </div>
+
+                <div class="flex justify-center items-center gap-4 mt-8 border-t pt-6">
+                    
+                    <a href="{% url 'main_page:home' %}"
+                       class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                              transform hover:scale-105 transition duration-300 ease-in-out">
+                        ⬅️ Out
+                    </a>
+
+                    <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="m-0">
+                        <button type="submit"
+                                class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
+                                       text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                                       transform hover:scale-105 transition duration-300 ease-in-out">
+                            📝 Đăng ký
+                        </button>
+                    </form>
+                </div>
+                </div>
+        </div>
+    </div>
 
     <script>
-        const status = document.getElementById("status");
-        const result = document.getElementById("result");
+        // --- CÀI ĐẶT CẤU HÌNH (GIỮ NGUYÊN) ---
+        const ONNX_MODEL_PATH = "{% static 'model/model1/voice_model_from_spec.onnx' %}";
+        const ROOM_ID = "{{ room.id }}";
+        const TARGET_SR = 16000;
+        const TARGET_LENGTH = 40000;
+        const N_FFT = 400;
+        const HOP_LENGTH = 512;
+        const THRESHOLD = 0.5;
+        const INFERENCE_INTERVAL_MS = 750;
 
-        let stream = null;
-        let recording = false;
-        const RECORD_DURATION = 2500;  
-        const LOOP_INTERVAL = 2500;    
+        // --- Biến toàn cục (GIỮ NGUYÊN) ---
+        let ortSession;
+        let isListening = false;
+        let audioContext;
+        let micStream;
+        let scriptProcessor;
+        let audioBuffer = new Float32Array(0);
+        let inferenceInterval;
 
-        async function startContinuousListening() {
+        const statusDiv = document.getElementById('status');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const featuresBox = document.getElementById('features-box');
+
+        // =================================================================
+        // CÁC HÀM CỐT LÕI (GIỮ NGUYÊN)
+        // =================================================================
+        async function resampleAudio(audioBuffer, targetSampleRate) {
+            if (audioBuffer.sampleRate === targetSampleRate) {
+                return audioBuffer.getChannelData(0);
+            }
+            const duration = audioBuffer.duration;
+            const offlineContext = new OfflineAudioContext(
+                1, Math.ceil(duration * targetSampleRate), targetSampleRate
+            );
+            const bufferSource = offlineContext.createBufferSource();
+            bufferSource.buffer = audioBuffer;
+            bufferSource.connect(offlineContext.destination);
+            bufferSource.start();
+            const resampledBuffer = await offlineContext.startRendering();
+            return resampledBuffer.getChannelData(0);
+        }
+
+        function padOrCut(data, length) {
+            if (data.length > length) {
+                return data.slice(0, length);
+            } else if (data.length < length) {
+                const paddedData = new Float32Array(length).fill(0);
+                paddedData.set(data);
+                return paddedData;
+            }
+            return data;
+        }
+
+        async function computeSpectrogram(data) {
+            const padWidth = N_FFT / 2;
+            const inputTensor = tf.tensor1d(data);
+            const paddedTensor = tf.mirrorPad(inputTensor, [[padWidth, padWidth]], 'reflect');
+            const stft = tf.signal.stft(
+                paddedTensor, N_FFT, HOP_LENGTH, N_FFT, tf.signal.hannWindow
+            );
+            const powerSpec = tf.square(tf.abs(stft));
+            const transposedSpec = powerSpec.transpose([1, 0]);
+            inputTensor.dispose();
+            paddedTensor.dispose();
+            stft.dispose();
+            powerSpec.dispose();
+            return transposedSpec;
+        }
+
+        async function runOnnxModel(spectrogramTensor) {
+            const specData = await spectrogramTensor.data();
+            const dims = spectrogramTensor.shape;
+            const ortTensor = new ort.Tensor('float32', specData, [1, ...dims]);
+            const inputs = { 'spectrogram': ortTensor };
+            const results = await ortSession.run(inputs);
+            const logit = results.logits.data[0];
+            const probability = 1 / (1 + Math.exp(-logit));
+            const prediction = probability > THRESHOLD ? "True" : "False";
+            spectrogramTensor.dispose();
+            return [prediction, probability];
+        }
+
+        // 🎨 HÀM UPDATE UI (GIỮ NGUYÊN)
+        function updateStatus(message, type) {
+            featuresBox.innerHTML = "";
+            statusDiv.classList.remove('hidden', 'bg-gray-50', 'bg-blue-100', 'bg-green-100', 'bg-red-100', 'text-gray-800', 'text-blue-800', 'text-green-800', 'text-red-800');
+            let baseClass = 'p-4 rounded-lg text-lg';
+            let typeClass = '';
+            let icon = '';
+            if (type === 'loading') {
+                typeClass = 'bg-blue-100 text-blue-800';
+                icon = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            } else if (type === 'success') {
+                typeClass = 'bg-green-100 text-green-800';
+                icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            } else if (type === 'error') {
+                typeClass = 'bg-red-100 text-red-800';
+                icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            } else { // 'info' hoặc mặc định
+                typeClass = 'bg-gray-100 text-gray-800';
+                icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            }
+            statusDiv.className = `${baseClass} ${typeClass}`;
+            statusDiv.innerHTML = `<div class="flex items-center justify-center">${icon} <span>${message}</span></div>`;
+        }
+
+        // =================================================================
+        // LOGIC MỚI (REAL-TIME) - (GIỮ NGUYÊN)
+        // =================================================================
+
+        async function loadModel() {
+            toggleBtn.disabled = true;
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                status.textContent = "🎙️ Hệ thống đang nghe 24/24...";
-                status.classList.add("pulse");
-                startRecordingLoop();
-            } catch (err) {
-                console.error("❌ Không thể truy cập microphone:", err);
-                status.textContent = "❌ Không thể truy cập microphone. Hãy bật quyền mic.";
-                status.classList.remove("pulse");
+                updateStatus("Đang tải model ONNX...", "loading");
+                ortSession = await ort.InferenceSession.create(ONNX_MODEL_PATH);
+                updateStatus("Model đã sẵn sàng. Nhấn 'Bắt đầu nghe' để chạy.", "info");
+                toggleBtn.disabled = false;
+            } catch (e) {
+                updateStatus(`Lỗi khi tải model: ${e.message}`, "error");
+            }
+        }
+        
+        function toggleListening() {
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
             }
         }
 
-        function startRecordingLoop() {
-            setInterval(async () => {
-                if (recording) return;
-                recording = true;
+        async function startListening() {
+            if (!ortSession) {
+                updateStatus("Lỗi: Model chưa được tải.", "error");
+                return;
+            }
+            try {
+                updateStatus("Yêu cầu quyền truy cập micro...", "loading");
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                scriptProcessor.onaudioprocess = processAudioChunk;
+                const source = audioContext.createMediaStreamSource(micStream);
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+                inferenceInterval = setInterval(runInference, INFERENCE_INTERVAL_MS);
+                isListening = true;
+                toggleBtn.textContent = "⏹️ Dừng nghe";
+                toggleBtn.classList.add('is-listening');
+                updateStatus("Đang nghe...", "loading");
+            } catch (e) {
+                updateStatus(`Lỗi micro: ${e.message}. Vui lòng cấp quyền truy cập.`, "error");
+            }
+        }
 
-                // 🗣️ Hiện thông báo hướng dẫn người dùng nói keyword
-                status.textContent = "🎙️ Hãy nói từ khóa của bạn...";
+        function stopListening() {
+            if (!isListening) return;
+            try {
+                clearInterval(inferenceInterval);
+                inferenceInterval = null;
+                scriptProcessor.disconnect();
+                micStream.getTracks().forEach(track => track.stop());
+                audioContext.close();
+                isListening = false;
+                audioBuffer = new Float32Array(0);
+                toggleBtn.textContent = "🎙️ Bắt đầu nghe";
+                toggleBtn.classList.remove('is-listening');
+                updateStatus("Đã dừng. Nhấn 'Bắt đầu' để nghe lại.", "info");
+            } catch (e) {
+                console.error("Lỗi khi dừng:", e);
+                updateStatus("Đã dừng.", "info");
+            }
+        }
 
-                const mediaRecorder = new MediaRecorder(stream);
-                const chunks = [];
+        function processAudioChunk(event) {
+            if (!isListening) return;
+            const newChunk = event.inputBuffer.getChannelData(0);
+            const newBuffer = new Float32Array(audioBuffer.length + newChunk.length);
+            newBuffer.set(audioBuffer);
+            newBuffer.set(newChunk, audioBuffer.length);
+            audioBuffer = newBuffer;
+            const maxBufferLength = (audioContext.sampleRate * 5); 
+            if (audioBuffer.length > maxBufferLength) {
+                audioBuffer = audioBuffer.slice(audioBuffer.length - maxBufferLength);
+            }
+        }
 
-                mediaRecorder.ondataavailable = e => chunks.push(e.data);
-                mediaRecorder.onstop = async () => {
-                    const blob = new Blob(chunks, { type: "audio/wav" });
-                    const formData = new FormData();
-                    formData.append("audio", blob, "voice.wav");
+        async function runInference() {
+            if (!isListening) return;
+            const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
+            if (audioBuffer.length < requiredNativeSamples) {
+                updateStatus("Đang nghe (chờ đủ buffer)...", "loading");
+                return;
+            }
+            const audioChunk = audioBuffer.slice(audioBuffer.length - requiredNativeSamples);
+            toggleBtn.disabled = true;
+            updateStatus("Đang phân tích...", "loading");
+
+            try {
+                const bufferToResample = audioContext.createBuffer(1, audioChunk.length, audioContext.sampleRate);
+                bufferToResample.copyToChannel(audioChunk, 0);
+                const resampledData = await resampleAudio(bufferToResample, TARGET_SR);
+                const processedData = padOrCut(resampledData, TARGET_LENGTH);
+                const spectrogramTensor = await computeSpectrogram(processedData);
+                const [prediction, probability] = await runOnnxModel(spectrogramTensor);
+
+                if (prediction === "True" && probability > THRESHOLD) {
+                    updateStatus(
+                        `<strong>Phát hiện từ khóa!</strong> (Xác suất: ${(probability * 100).toFixed(2)}%)<br>
+                        🔄 Đang gửi tới Model2 (xác thực người nói)...`,
+                        "loading"
+                    );
+                    stopListening();
 
                     try {
-                        const res = await fetch("{% url 'action_room:verify_voice' %}", {
+                        const wavBlob = await exportWavBlob(audioChunk, audioContext.sampleRate);
+                        const formData = new FormData();
+                        formData.append("audio", wavBlob, "captured.wav");
+                        formData.append("room_id", ROOM_ID);
+
+                        const response = await fetch("/action_room/verify_voice/", {
                             method: "POST",
                             body: formData
                         });
-                        const data = await res.json();
 
-                        // 🧠 Phản hồi từ Flask API
-                        if (data.similarity && data.similarity >= 0) {
-                            const sim = parseFloat(data.similarity);
-                            if (sim >= 0.8) {
-                                // ✅ Người hợp lệ
-                                const name = data.name || "Người dùng hợp lệ";
-                                const role = data.role || "Được phép truy cập";
-                                result.innerHTML = `✅ <span class="ok">${name} – Quyền: ${role}</span><br>
-                                                     (Độ khớp ${(sim*100).toFixed(1)}%)`;
-                            } else {
-                                // ❌ Người lạ
-                                result.innerHTML = `🚫 <span class="fail">Người lạ – Không có quyền truy cập</span><br>
-                                                     (Độ khớp ${(sim*100).toFixed(1)}%)`;
-                            }
+                        const data = await response.json();
+                        if (data.error) {
+                            updateStatus(`❌ Lỗi: ${data.error}`, "error");
                         } else {
-                            result.innerHTML = `⚠️ ${data.error || "Không thể nhận dạng"}`;
+                            // 1️⃣ Tạo bảng hiển thị tất cả kết quả
+                            let tableHtml = `
+                                <h3 class="font-bold text-lg mb-2 text-gray-800 text-center">🔊 Kết quả so khớp</h3>
+                                <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse border border-gray-200 rounded-lg">
+                                    <thead>
+                                        <tr class="bg-gray-100 border-b">
+                                            <th class="py-2 px-3 border-r">Tên</th>
+                                            <th class="py-2 px-3 border-r text-center">Similarity</th>
+                                            <th class="py-2 px-3 text-center">Kết quả</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.results.map(r => `
+                                            <tr class="border-b hover:bg-gray-50">
+                                                <td class="py-2 px-3 font-medium">${r.name}${r.is_owner ? " 👑" : ""}</td>
+                                                <td class="py-2 px-3 text-center">${r.similarity.toFixed(4)}</td>
+                                                <td class="py-2 px-3 text-center">
+                                                    ${r.is_match ? "✅ Khớp" : "❌"}
+                                                </td>
+                                            </tr>
+                                        `).join("")}
+                                    </tbody>
+                                </table>
+                                </div>
+                            `;
+
+                            // 2️⃣ Hiển thị bảng
+                            updateStatus(tableHtml, "success");
+
+                            // 3️⃣ Nếu có thiết bị của người khớp nhất thì hiển thị thêm
+                            if (data.matched_member && data.functions && data.functions.length > 0) {
+                                // Delay 100ms để tránh bị updateStatus xóa mất
+                                setTimeout(() => {
+                                    const gradientColors = [
+                                        "from-red-400 to-red-500",
+                                        "from-green-400 to-green-500",
+                                        "from-blue-400 to-blue-500",
+                                        "from-pink-400 to-pink-500",
+                                        "from-orange-400 to-orange-500",
+                                        "from-teal-400 to-teal-500"
+                                    ];
+
+                                    const deviceCards = data.functions.map((f, i) => `
+                                        <div class="bg-gradient-to-br ${gradientColors[i % gradientColors.length]} 
+                                                    text-white font-semibold rounded-xl shadow-md flex items-center justify-center 
+                                                    w-28 h-14 sm:w-32 sm:h-16 hover:scale-105 hover:shadow-lg transform transition-all duration-300 ease-in-out">
+                                            ${f}
+                                        </div>
+                                    `).join("");
+
+                                    featuresBox.innerHTML = `
+                                        <div class="mt-6 bg-green-50 p-6 rounded-2xl shadow-inner border border-green-200">
+                                            <h3 class="text-xl font-bold mb-5 text-green-700 text-center">
+                                                Thiết bị của ${data.matched_member}
+                                            </h3>
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center place-items-center">
+                                                ${deviceCards}
+                                            </div>
+                                        </div>
+                                    `;
+                                }, 200);
+                            } else {
+                                featuresBox.innerHTML = `<p class="text-gray-500 mt-4 italic">Không có thiết bị nào được phân quyền.</p>`;
+                            }
+
+
+                            // 4️⃣ Reset nút điều khiển
+                            toggleBtn.disabled = false;
+                            toggleBtn.textContent = "🎙️ Bắt đầu nghe";
+                            toggleBtn.classList.remove('is-listening');
                         }
 
                     } catch (err) {
-                        console.error("⚠️ Lỗi gửi API:", err);
-                        result.textContent = "⚠️ Không thể kết nối đến server Flask.";
+                        console.error("Lỗi khi gửi Django/Flask:", err);
+                        updateStatus(`🔥 Lỗi khi xác thực giọng nói: ${err.message}`, "error");
+                        toggleBtn.disabled = false;
+                        toggleBtn.textContent = "🎙️ Bắt đầu nghe";
+                        toggleBtn.classList.remove('is-listening');
                     }
+                } else {
+                    updateStatus(
+                        `Đang nghe... (Gần nhất: ${(probability * 100).toFixed(2)}%)`,
+                        "loading"
+                    );
+                    toggleBtn.disabled = false;
+                }
 
-                    recording = false;
-                    status.textContent = "🎧 Hệ thống tiếp tục nghe...";
-                };
+            } catch (e) {
+                updateStatus(`Lỗi khi dự đoán: ${e.message}`, "error");
+                toggleBtn.disabled = false;
+            }
 
-                mediaRecorder.start();
-                setTimeout(() => mediaRecorder.stop(), RECORD_DURATION);
-            }, LOOP_INTERVAL);
         }
 
-        // 🚀 Tự khởi động khi trang load
-        window.addEventListener("load", startContinuousListening);
+        // 🔧 Chuyển mảng Float32Array thành file WAV (GIỮ NGUYÊN)
+        async function exportWavBlob(float32Array, sampleRate) {
+            const buffer = new ArrayBuffer(44 + float32Array.length * 2);
+            const view = new DataView(buffer);
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+            writeString(0, "RIFF");
+            view.setUint32(4, 36 + float32Array.length * 2, true);
+            writeString(8, "WAVE");
+            writeString(12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, "data");
+            view.setUint32(40, float32Array.length * 2, true);
+            let offset = 44;
+            for (let i = 0; i < float32Array.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            return new Blob([buffer], { type: "audio/wav" });
+        }
+
+        // Tải model ngay khi trang được mở
+        loadModel();
+
     </script>
 </body>
 </html>
-

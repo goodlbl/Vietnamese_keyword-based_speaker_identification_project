@@ -19,28 +19,15 @@
             padding: 30px 0;
         }
 
-        .form-section {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-
-        h2 {
-            text-align: center;
-            color: #007BFF;
-            margin-bottom: 1rem;
-        }
+        /* Bỏ style .form-section và h2 */
 
         .name-input {
             text-align: center;
-            margin: 20px 0;
+            margin: 30px 0; /* Giống file 1 */
         }
 
         .name-input input {
-            width: 80%;
+            width: 60%; /* Giống file 1 */
             padding: 12px 15px;
             font-size: 18px;
             border: 2px solid #007BFF;
@@ -48,11 +35,19 @@
             outline: none;
         }
 
+        /* Thêm style .instruction từ file 1 */
+        .instruction {
+            text-align: center;
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
         .audio-section {
             display: flex;
             justify-content: space-around;
             margin: 20px auto;
-            flex-wrap: wrap;
+            width: 90%; /* Giống file 1 */
         }
 
         .audio-box {
@@ -62,7 +57,7 @@
             padding: 20px;
             width: 30%;
             text-align: center;
-            margin: 10px;
+            margin: 0; /* Bỏ margin từ file 2, để audio-section quản lý */
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
@@ -85,13 +80,20 @@
             background-color: red;
         }
 
+        /* Thêm style .spacer từ file 1 */
+        .spacer { height: 40px; }
+
         .room-inputs {
-            margin-top: 30px;
-            text-align: center;
+            /* Chỉnh cho giống .button-grid của file 1 */
+            width: 60%;
+            margin: 0 auto;
+            text-align: center; /* Thêm để input căn giữa */
         }
 
         .room-inputs input {
-            width: 60%;
+            /* Chỉnh width cho vừa layout mới */
+            width: 100%; 
+            box-sizing: border-box; /* Thêm để padding không làm vỡ layout */
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #007BFF;
@@ -122,34 +124,41 @@
       action="{% url 'room_registering_page:create_owner_and_room' %}">
     {% csrf_token %}
 
-    <div class="form-section">
-        <h2>Register Owner</h2>
+    <div class="name-input">
+        <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
+    </div>
 
-        <!-- Nhập tên -->
-        <div class="name-input">
-            <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
+    <div class="instruction">
+        Bạn hãy đọc theo các cụm sau đây để làm mẫu so sánh
+    </div>
+
+    <div class="audio-section">
+        <div class="audio-box" id="rec1">
+            <h3>“Quad team ơi”</h3>
+            <button type="button" onclick="toggleRecord(1)">🎙️ Bắt đầu thu</button>
+            <audio controls id="player1" style="display:none;"></audio>
+            <input type="file" id="audioInput1" name="audio1" style="display:none;">
         </div>
-
-        <!-- 3 ô thu âm -->
-        <div class="audio-section">
-            {% for i in "123" %}
-            <div class="audio-box" id="rec{{ i }}">
-                <h3>Sample {{ i }}</h3>
-                <button type="button" onclick="toggleRecord({{ i }})">🎙️ Bắt đầu thu</button>
-                <audio controls id="player{{ i }}" style="display:none;"></audio>
-                <input type="file" id="audioInput{{ i }}" name="audio{{ i }}" style="display:none;">
-            </div>
-            {% endfor %}
+        <div class="audio-box" id="rec2">
+            <h3>“Mở lên Quad team ơi”</h3>
+            <button type="button" onclick="toggleRecord(2)">🎙️ Bắt đầu thu</button>
+            <audio controls id="player2" style="display:none;"></audio>
+            <input type="file" id="audioInput2" name="audio2" style="display:none;">
+        </div>
+        <div class="audio-box" id="rec3">
+            <h3>“Quad team ơi thế nào”</h3>
+            <button type="button" onclick="toggleRecord(3)">🎙️ Bắt đầu thu</button>
+            <audio controls id="player3" style="display:none;"></audio>
+            <input type="file" id="audioInput3" name="audio3" style="display:none;">
         </div>
     </div>
 
-    <div class="form-section">
-        <h2>Register Room</h2>
-        <div class="room-inputs">
-            <input type="text" name="room_number" placeholder="Nhập số phòng (10 chữ số)" maxlength="10" pattern="\d{10}">
-            <br>
-            <input type="password" name="password" placeholder="Nhập mật khẩu">
-        </div>
+    <div class="spacer"></div>
+
+    <div class="room-inputs">
+        <input type="text" name="room_number" placeholder="Nhập mã căn hộ (10 chữ số)" maxlength="10" pattern="\d{10}">
+        <br>
+        <input type="password" name="password" placeholder="Nhập mật khẩu">
     </div>
 
     <button type="submit" class="corner-button bottom-right">Enter</button>
@@ -160,6 +169,7 @@
 let recorders = {};
 let audioChunks = {};
 let streams = {};
+let audioBlobs = {}; // Thêm biến này từ code của bạn
 
 async function toggleRecord(id) {
     const btn = document.querySelector(`#rec${id} button`);
@@ -174,23 +184,39 @@ async function toggleRecord(id) {
             audioChunks[id] = [];
 
             recorder.ondataavailable = e => audioChunks[id].push(e.data);
+            
             recorder.onstop = () => {
                 const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
+                
                 const file = new File([blob], `sample${id}.webm`, { type: 'audio/webm' });
-
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 input.files = dataTransfer.files;
 
+                audioBlobs[id] = blob;
                 const url = URL.createObjectURL(blob);
                 player.src = url;
                 player.style.display = 'block';
+                player.onplay = () => { 
+                    setTimeout(() => player.pause(), 2500); 
+                };
             };
 
             recorder.start();
             recorders[id] = recorder;
-            btn.textContent = "⏹ Dừng thu";
+            btn.textContent = "⏹ Đang thu...";
             btn.classList.add("recording");
+
+            setTimeout(() => {
+                if (recorders[id]) {
+                    recorders[id].stop();
+                    streams[id].getTracks().forEach(track => track.stop());
+                    recorders[id] = null;
+                    btn.textContent = "🎙️ Bắt đầu thu";
+                    btn.classList.remove("recording");
+                }
+            }, 2500);
+
         } catch (err) {
             alert("Không truy cập được micro: " + err.message);
         }
