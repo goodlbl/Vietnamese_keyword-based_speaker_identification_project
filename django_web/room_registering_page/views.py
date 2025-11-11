@@ -55,10 +55,15 @@ def create_owner_and_room(request):
             total_members=1
         )
 
+        # 🟩 Gán room cho owner giống như member
+        record.room = new_room.id   # 👈 chỉ gán ID, không gán object
+        record.save(update_fields=["room"])
+
         # Lưu session (để member sau này dùng)
         request.session['room_id'] = new_room.id
 
         print(f"🏠 Đã tạo phòng {room_number} với chủ {name}")
         return render(request, 'action_room/action_room copy.html', {'room': new_room})
+
 
     return render(request, 'room_registering_page/owner_and_room_register.html')
