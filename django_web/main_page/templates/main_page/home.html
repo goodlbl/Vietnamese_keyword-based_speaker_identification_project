@@ -103,7 +103,7 @@
 </head>
 <body>
     <div class="container">
-        <h1> Nhập số phòng</h1>
+        <h1> Nhập mã căn hộ</h1>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
@@ -116,7 +116,7 @@
 
         <hr>
 
-        <a href="{% url 'room_registering_page:create_owner_and_room' %}" class="btn-primary">+ Tạo phòng mới</a>
+        <a href="{% url 'room_registering_page:create_owner_and_room' %}" class="btn-primary">+ Tạo mới</a>
     </div>
 </body>
 </html>

@@ -1,30 +1,28 @@
-# Đã xóa 'requests'
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from room_registering_page.models import Room
 from member_registering_page.models import MemberRecord
 from django.views.decorators.csrf import csrf_exempt
-import numpy as np, json
-import os, tempfile
-
-# 🚀 Thêm thư viện để so sánh cosine và import model
+import numpy as np, json, os, tempfile
 from sklearn.metrics.pairwise import cosine_similarity
+
+# 🔹 Import mô hình nhận dạng giọng nói
 try:
-    # Giả sử app chứa model tên là 'audio_model'
     from audio_model.utils import GLOBAL_MODEL, extract_embedding, DEVICE
 except ImportError:
     GLOBAL_MODEL = None
     extract_embedding = None
 
-# 🚀 Đặt ngưỡng so sánh (similarity threshold)
-# Bạn cần tinh chỉnh con số này dựa trên thực tế
-VOICE_THRESHOLD = 0.8 
+# 🔹 Ngưỡng nhận dạng (cosine từ 0 → 1)
+VOICE_THRESHOLD = 0.5
 
 DEVICE_NAMES = ["Bếp", "Ti vi", "Máy lạnh", "Quạt", "Quạt trần", "Đèn"]
+
 
 def action_room_view(request, room_id):
     room = get_object_or_404(Room, id=room_id)
     return render(request, 'action_room/action_room.html', {'room': room})
+
 
 @csrf_exempt
 def verify_voice(request):
@@ -38,63 +36,71 @@ def verify_voice(request):
         return JsonResponse({"error": "Không có file audio"}, status=400)
     if not room_id:
         return JsonResponse({"error": "Thiếu room_id"}, status=400)
-    
-    # Kiểm tra model đã sẵn sàng chưa
-    if not GLOBAL_MODEL or not extract_embedding:
-        return JsonResponse({"error": "Dịch vụ model không sẵn sàng"}, status=500)
 
+    # 🔹 Lấy object Room (để kiểm tra tồn tại)
     room = get_object_or_404(Room, id=room_id)
-    owner: MemberRecord = room.owner
 
-    # Đọc 3 embedding mẫu (dạng list-of-lists)
-    ref_emb_list = []
-    for i in range(1, 4):
-        emb_bytes = getattr(owner, f"audio{i}", None)
-        if emb_bytes:
-            emb = np.frombuffer(emb_bytes, dtype=np.float32)
-            ref_emb_list.append(emb) # Giữ ở dạng np.array để xử lý
+    # 🔹 Lấy toàn bộ thành viên có cùng room_id (lưu dưới dạng số)
+    members = MemberRecord.objects.filter(room=room.id)
 
-    if not ref_emb_list:
-        return JsonResponse({"error": "Không có embedding mẫu cho chủ phòng"}, status=404)
+
+
 
     # ========================================================
-    # 🟩 Xử lý audio và so sánh cục bộ (thay thế API call)
+    # 🟩 Xử lý audio và so sánh với tất cả thành viên
     # ========================================================
     tmp_file_path = None
     try:
-        # 1. Trích xuất embedding từ file audio mới
+        # Lưu file audio tạm để trích xuất embedding
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
             for chunk in audio_file.chunks():
                 tmp_file.write(chunk)
             tmp_file_path = tmp_file.name
-        
-        # Gọi hàm utils
+
+        # Trích xuất embedding giọng nói mới
         new_emb = extract_embedding(GLOBAL_MODEL, tmp_file_path)
-        new_emb_2d = new_emb.reshape(1, -1) # Shape (1, 192)
+        new_emb_2d = new_emb.reshape(1, -1)
 
-        # 2. Chuẩn bị embedding mẫu
-        # ref_emb_list là list [array(192,), array(192,), ...]
-        ref_emb_array = np.array(ref_emb_list) # Shape (3, 192)
+        results = []
+        for member in members:
+            ref_emb_list = []
+            for i in range(1, 4):
+                emb_bytes = getattr(member, f"audio{i}", None)
+                if emb_bytes:
+                    emb = np.frombuffer(emb_bytes, dtype=np.float32)
+                    ref_emb_list.append(emb)
 
-        # 3. Tính toán cosine similarity
-        scores = cosine_similarity(new_emb_2d, ref_emb_array)
-        
-        # Lấy điểm trung bình (hoặc max)
-        similarity = float(np.mean(scores[0])) 
-        is_match = similarity >= VOICE_THRESHOLD
+            if not ref_emb_list:
+                continue
+
+            ref_emb_array = np.array(ref_emb_list)
+            scores = cosine_similarity(new_emb_2d, ref_emb_array)
+            similarity = float(np.mean(scores[0]))  # 0 → 1
+
+            results.append({
+                "name": member.name,
+                "similarity": round(similarity, 4),   # Giữ trong [0,1]
+                "is_match": similarity >= VOICE_THRESHOLD,
+                "is_owner": member.is_owner,
+            })
+
+        # 🔹 Sắp xếp giảm dần theo similarity
+        results.sort(key=lambda x: x["similarity"], reverse=True)
 
     except Exception as e:
-        return JsonResponse({"error": f"Lỗi xử lý audio cục bộ: {e}"}, status=500)
+        return JsonResponse({"error": f"Lỗi xử lý audio: {e}"}, status=500)
     finally:
-        # Luôn xóa file tạm
         if tmp_file_path and os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
-    # ========================================================
-    # ❌ Kết thúc khối xử lý cục bộ
-    # ========================================================
 
-    if is_match:
-        matched_member = owner
+    # ========================================================
+    # ✅ Tìm người khớp nhất (nếu có)
+    # ========================================================
+    matched_member = None
+    best_result = max(results, key=lambda x: x["similarity"]) if results else None
+
+    if best_result and best_result["is_match"]:
+        matched_member = members.get(name=best_result["name"])
 
         try:
             raw_buttons = matched_member.buttons
@@ -103,19 +109,15 @@ def verify_voice(request):
             rights = [0, 0, 0, 0, 0, 0]
 
         functions = [DEVICE_NAMES[i] for i, val in enumerate(rights) if val == 1]
+    else:
+        functions = []
 
-        return JsonResponse({
-            "owner": matched_member.name,
-            "room_id": room_id,
-            "similarity": round(similarity, 4),
-            "is_match": True,
-            "is_owner": matched_member.is_owner,
-            "functions": functions
-        })
-
+    # ========================================================
+    # ✅ Trả về toàn bộ kết quả + thiết bị nếu có
+    # ========================================================
     return JsonResponse({
-        "owner": owner.name,
+        "results": results,  # Danh sách tất cả thành viên
+        "matched_member": best_result["name"] if best_result else None,
         "room_id": room_id,
-        "similarity": round(similarity, 4),
-        "is_match": False
+        "functions": functions
     })
