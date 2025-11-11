@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trích xuất Embedding Âm thanh</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        input[type="file"] { display: block; margin: 15px 0; padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .result-box { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #e9ecef; }
+        pre { white-space: pre-wrap; word-wrap: break-word; font-size: 14px; background-color: #f8f9fa; padding: 10px; border-radius: 4px; }
+        .status { margin-top: 10px; font-weight: bold; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎙️ Trích xuất Speaker Embedding (MFAConformer)</h1>
+
+    <input type="file" id="audioFile" accept="audio/*">
+    <button onclick="uploadAudio()">Trích xuất Embedding</button>
+
+    <div class="result-box">
+        <div class="status" id="statusMessage">Đang chờ tệp...</div>
+        <div class="status" id="dimMessage"></div>
+        <hr>
+        <strong>Embedding (192 chiều):</strong>
+        <pre id="embeddingOutput">Nhấn nút để bắt đầu quá trình trích xuất.</pre>
+    </div>
+</div>
+
+<script>
+    const API_URL = '/audio_model/extract/'; // Phải khớp với URL Django của bạn
+
+    async function uploadAudio() {
+        const fileInput = document.getElementById('audioFile');
+        const file = fileInput.files[0];
+        const statusMessage = document.getElementById('statusMessage');
+        const dimMessage = document.getElementById('dimMessage');
+        const embeddingOutput = document.getElementById('embeddingOutput');
+
+        if (!file) {
+            statusMessage.textContent = '❌ Vui lòng chọn một tệp âm thanh.';
+            statusMessage.className = 'status error';
+            return;
+        }
+
+        statusMessage.textContent = '⏳ Đang tải lên và xử lý mô hình...';
+        statusMessage.className = 'status';
+        embeddingOutput.textContent = 'Đang xử lý...';
+        dimMessage.textContent = '';
+        
+        try {
+            // 1. Chuẩn bị FormData để gửi tệp
+            const formData = new FormData();
+            // Tên trường phải là 'audio_file' để khớp với request.FILES['audio_file'] trong views.py
+            formData.append('audio_file', file); 
+
+            // 2. Gửi yêu cầu POST
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: formData
+                // Django API cần bỏ qua Content-Type khi dùng FormData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // 3. Xử lý kết quả thành công
+                statusMessage.textContent = '✅ Trích xuất thành công!';
+                statusMessage.className = 'status success';
+                
+                dimMessage.textContent = `Chiều: ${data.embedding_dim}`;
+
+                // Hiển thị 5 phần tử đầu tiên và cuối cùng để làm ví dụ
+                const embedding = data.embedding;
+                const display = `[${embedding.slice(0, 5).map(e => e.toFixed(4)).join(', ')}, ..., ${embedding.slice(-5).map(e => e.toFixed(4)).join(', ')}]`;
+                
+                embeddingOutput.textContent = display;
+                
+            } else {
+                // 4. Xử lý lỗi từ server (response.status != 200 hoặc data.success == false)
+                const errorMessage = data.error || 'Lỗi không xác định từ máy chủ.';
+                statusMessage.textContent = `❌ Lỗi: ${errorMessage}`;
+                statusMessage.className = 'status error';
+                embeddingOutput.textContent = 'Không thể trích xuất embedding.';
+            }
+
+        } catch (error) {
+            // 5. Xử lý lỗi kết nối mạng/fetch
+            console.error('Lỗi Fetch:', error);
+            statusMessage.textContent = `❌ Lỗi kết nối: ${error.message}`;
+            statusMessage.className = 'status error';
+            embeddingOutput.textContent = 'Lỗi kết nối mạng.';
+        }
+    }
+</script>
+
+</body>
+</html>

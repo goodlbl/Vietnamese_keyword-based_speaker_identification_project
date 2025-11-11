@@ -1,35 +1,31 @@
-import requests
+# Đã xóa 'requests'
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from room_registering_page.models import Room
 from member_registering_page.models import MemberRecord
 from django.views.decorators.csrf import csrf_exempt
 import numpy as np, json
+import os, tempfile
 
-# ============================================================
-# 🔹 Flask API URL
-# ============================================================
-MODEL2_API_URL = "http://127.0.0.1:5000/predict"
-# Nếu dùng Cloudflare tunnel thì đổi dòng trên:
-# MODEL2_API_URL = "https://adjust-victory-worldcat-luis.trycloudflare.com/predict"
+# 🚀 Thêm thư viện để so sánh cosine và import model
+from sklearn.metrics.pairwise import cosine_similarity
+try:
+    # Giả sử app chứa model tên là 'audio_model'
+    from audio_model.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+except ImportError:
+    GLOBAL_MODEL = None
+    extract_embedding = None
 
-# ============================================================
-# 🔹 Danh sách thiết bị tương ứng thứ tự trong mảng buttons
-# ============================================================
+# 🚀 Đặt ngưỡng so sánh (similarity threshold)
+# Bạn cần tinh chỉnh con số này dựa trên thực tế
+VOICE_THRESHOLD = 0.8 
+
 DEVICE_NAMES = ["Bếp", "Ti vi", "Máy lạnh", "Quạt", "Quạt trần", "Đèn"]
 
-# ============================================================
-# 🔹 Trang hiển thị điều khiển
-# ============================================================
 def action_room_view(request, room_id):
-    """Hiển thị trang điều khiển của từng phòng"""
     room = get_object_or_404(Room, id=room_id)
-    return render(request, 'action_room/action_room copy.html', {'room': room})
+    return render(request, 'action_room/action_room.html', {'room': room})
 
-
-# ============================================================
-# 🔹 Xác thực giọng nói và trả danh sách chức năng
-# ============================================================
 @csrf_exempt
 def verify_voice(request):
     if request.method != "POST":
@@ -42,76 +38,84 @@ def verify_voice(request):
         return JsonResponse({"error": "Không có file audio"}, status=400)
     if not room_id:
         return JsonResponse({"error": "Thiếu room_id"}, status=400)
+    
+    # Kiểm tra model đã sẵn sàng chưa
+    if not GLOBAL_MODEL or not extract_embedding:
+        return JsonResponse({"error": "Dịch vụ model không sẵn sàng"}, status=500)
 
-    # ========================================================
-    # 🔸 Lấy thông tin phòng và chủ phòng
-    # ========================================================
     room = get_object_or_404(Room, id=room_id)
     owner: MemberRecord = room.owner
 
-    # 🔸 Đọc 3 embedding 192-dim từ chủ phòng
-    emb_list = []
+    # Đọc 3 embedding mẫu (dạng list-of-lists)
+    ref_emb_list = []
     for i in range(1, 4):
         emb_bytes = getattr(owner, f"audio{i}", None)
         if emb_bytes:
             emb = np.frombuffer(emb_bytes, dtype=np.float32)
-            emb_list.append(emb.tolist())
+            ref_emb_list.append(emb) # Giữ ở dạng np.array để xử lý
 
-    if not emb_list:
+    if not ref_emb_list:
         return JsonResponse({"error": "Không có embedding mẫu cho chủ phòng"}, status=404)
 
     # ========================================================
-    # 🔸 Gửi file test + embedding mẫu sang Flask /predict
+    # 🟩 Xử lý audio và so sánh cục bộ (thay thế API call)
     # ========================================================
+    tmp_file_path = None
     try:
-        files = {"audio": audio_file}
-        data = {"ref_embeddings": json.dumps(emb_list)}
-        resp = requests.post(MODEL2_API_URL, files=files, data=data, timeout=60)
-        flask_data = resp.json()
+        # 1. Trích xuất embedding từ file audio mới
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
+            for chunk in audio_file.chunks():
+                tmp_file.write(chunk)
+            tmp_file_path = tmp_file.name
+        
+        # Gọi hàm utils
+        new_emb = extract_embedding(GLOBAL_MODEL, tmp_file_path)
+        new_emb_2d = new_emb.reshape(1, -1) # Shape (1, 192)
+
+        # 2. Chuẩn bị embedding mẫu
+        # ref_emb_list là list [array(192,), array(192,), ...]
+        ref_emb_array = np.array(ref_emb_list) # Shape (3, 192)
+
+        # 3. Tính toán cosine similarity
+        scores = cosine_similarity(new_emb_2d, ref_emb_array)
+        
+        # Lấy điểm trung bình (hoặc max)
+        similarity = float(np.mean(scores[0])) 
+        is_match = similarity >= VOICE_THRESHOLD
+
     except Exception as e:
-        return JsonResponse({"error": f"Lỗi Flask API: {e}"}, status=500)
+        return JsonResponse({"error": f"Lỗi xử lý audio cục bộ: {e}"}, status=500)
+    finally:
+        # Luôn xóa file tạm
+        if tmp_file_path and os.path.exists(tmp_file_path):
+            os.remove(tmp_file_path)
+    # ========================================================
+    # ❌ Kết thúc khối xử lý cục bộ
+    # ========================================================
 
-    # ========================================================
-    # 🔸 Kiểm tra phản hồi từ Flask
-    # ========================================================
-    if "score" not in flask_data:
-        return JsonResponse({"error": "Không nhận được score từ Flask", "raw": flask_data}, status=500)
-
-    similarity = round(flask_data.get("score", 0.0), 4)
-    is_match = flask_data.get("is_match", False)
-
-    # ========================================================
-    # 🔸 Nếu giọng khớp → lấy thông tin người đó và quyền
-    # ========================================================
     if is_match:
-        # Tạm thời chỉ so với chủ phòng (sau có thể mở rộng nhiều người)
         matched_member = owner
 
-        # 🔍 Giải mã quyền từ mảng [1,0,1,1,0,0]
         try:
             raw_buttons = matched_member.buttons
             rights = json.loads(raw_buttons) if isinstance(raw_buttons, str) else raw_buttons
         except Exception:
             rights = [0, 0, 0, 0, 0, 0]
 
-        # 🔍 Lọc thiết bị có quyền
         functions = [DEVICE_NAMES[i] for i, val in enumerate(rights) if val == 1]
 
         return JsonResponse({
             "owner": matched_member.name,
             "room_id": room_id,
-            "similarity": similarity,
+            "similarity": round(similarity, 4),
             "is_match": True,
             "is_owner": matched_member.is_owner,
             "functions": functions
         })
 
-    # ========================================================
-    # 🔸 Nếu không khớp
-    # ========================================================
     return JsonResponse({
         "owner": owner.name,
         "room_id": room_id,
-        "similarity": similarity,
+        "similarity": round(similarity, 4),
         "is_match": False
     })
