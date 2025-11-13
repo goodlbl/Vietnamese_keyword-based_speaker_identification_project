@@ -8,12 +8,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # 🔹 Import mô hình nhận dạng giọng nói
 try:
-    from audio_model.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+    from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
 except ImportError:
     GLOBAL_MODEL = None
     extract_embedding = None
 
-# 🔹 Ngưỡng nhận dạng (cosine từ 0 → 1)
 VOICE_THRESHOLD = 0.5
 
 DEVICE_NAMES = ["Bếp", "Ti vi", "Máy lạnh", "Quạt", "Quạt trần", "Đèn"]

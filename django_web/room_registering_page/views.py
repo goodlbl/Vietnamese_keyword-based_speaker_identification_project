@@ -5,10 +5,11 @@ import io, numpy as np
 from random import randint
 import os, tempfile
 
-# Import model cục bộ từ app khác (ví dụ: audio_model)
 try:
-    from audio_model.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+    from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+    print(f"✅ Tải model thành công trên {DEVICE} cho đăng ký căn hộ views.")
 except ImportError:
+    print("❌ LỖI IMPORT: Không tìm thấy utils.py hoặc model.")
     GLOBAL_MODEL = None
     extract_embedding = None
 

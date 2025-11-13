@@ -6,8 +6,8 @@ import json, io, numpy as np
 import os, tempfile
 
 try:
-    from audio_model.utils import GLOBAL_MODEL, extract_embedding, DEVICE
-    print(f"✅ Tải model thành công trên {DEVICE} cho views.")
+    from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+    print(f"✅ Tải model thành công trên {DEVICE} cho đăng ký người dùng views.")
 except ImportError:
     print("❌ LỖI IMPORT: Không tìm thấy utils.py hoặc model.")
     GLOBAL_MODEL = None
