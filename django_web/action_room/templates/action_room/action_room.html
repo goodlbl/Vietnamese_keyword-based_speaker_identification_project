@@ -60,6 +60,7 @@
 
                 <div class="mt-6 min-h-[150px]">
                     <div id="status" class="mt-6 text-center p-4 rounded-lg bg-gray-50 hidden"></div>
+                        <div id="fps-display" class="text-center text-gray-500 text-sm mt-2"></div> 
                     <div id="features-box" class="mt-6 text-center"></div>
                 </div>
 
@@ -102,12 +103,14 @@
         let micStream;
         let scriptProcessor;
         let audioBuffer = new Float32Array(0);
-        let inferenceInterval;
 
         const statusDiv = document.getElementById('status');
         const toggleBtn = document.getElementById('toggle-btn');
         const featuresBox = document.getElementById('features-box');
 
+        const fpsDisplay = document.getElementById('fps-display');
+        let frameCount = 0;
+        let fpsInterval;
         // =================================================================
         // CÁC HÀM CỐT LÕI (GIỮ NGUYÊN)
         // =================================================================
@@ -229,8 +232,19 @@
                 const source = audioContext.createMediaStreamSource(micStream);
                 source.connect(scriptProcessor);
                 scriptProcessor.connect(audioContext.destination);
-                inferenceInterval = setInterval(runInference, INFERENCE_INTERVAL_MS);
                 isListening = true;
+
+                frameCount = 0;
+                if (fpsInterval) clearInterval(fpsInterval); // Xóa interval cũ nếu có
+                fpsInterval = setInterval(() => {
+                    if (fpsDisplay) {
+                        fpsDisplay.textContent = `FPS: ${frameCount}`;
+                    }
+                    frameCount = 0; // Reset bộ đếm
+                }, 1000); // Cập nhật mỗi giây
+
+                runInference();
+
                 toggleBtn.textContent = "⏹️ Dừng nghe";
                 toggleBtn.classList.add('is-listening');
                 updateStatus("Đang nghe...", "loading");
@@ -239,18 +253,44 @@
             }
         }
 
+        // 🎨 THAY THẾ TOÀN BỘ HÀM NÀY
         function stopListening() {
             if (!isListening) return;
+
+            // 🎨 THAY ĐỔI QUAN TRỌNG: Đặt thành false ngay lập tức
+            // để ngăn chặn bất kỳ vòng lặp runInference nào sắp bắt đầu
+            isListening = false; 
+
+            if (fpsInterval) {
+                clearInterval(fpsInterval);
+                fpsInterval = null;
+            }
+            if (fpsDisplay) {
+                fpsDisplay.textContent = ""; // Xóa hiển thị
+            }
+
             try {
-                clearInterval(inferenceInterval);
-                inferenceInterval = null;
-                scriptProcessor.disconnect();
-                micStream.getTracks().forEach(track => track.stop());
-                audioContext.close();
-                isListening = false;
+                if (scriptProcessor) {
+                    scriptProcessor.disconnect();
+                    scriptProcessor = null;
+                }
+                if (micStream) {
+                    micStream.getTracks().forEach(track => track.stop());
+                    micStream = null;
+                }
+                // Kiểm tra an toàn trước khi đóng AudioContext
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                    audioContext = null;
+                }
+
                 audioBuffer = new Float32Array(0);
                 toggleBtn.textContent = "🎙️ Bắt đầu nghe";
                 toggleBtn.classList.remove('is-listening');
+                
+                // 🎨 THÊM MỚI: Đảm bảo nút được bật lại
+                toggleBtn.disabled = false; 
+                
                 updateStatus("Đã dừng. Nhấn 'Bắt đầu' để nghe lại.", "info");
             } catch (e) {
                 console.error("Lỗi khi dừng:", e);
@@ -271,35 +311,77 @@
             }
         }
 
+        // 🎨 THAY THẾ TOÀN BỘ HÀM NÀY
         async function runInference() {
+            // Chốt 1: Dừng nếu không còn nghe nữa
             if (!isListening) return;
-            const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
-            if (audioBuffer.length < requiredNativeSamples) {
-                updateStatus("Đang nghe (chờ đủ buffer)...", "loading");
+
+            // Kiểm tra an toàn AudioContext
+            if (!audioContext || audioContext.state === 'closed') {
+                console.warn("AudioContext đã đóng, dừng vòng lặp.");
+                stopListening(); // Dọn dẹp nếu cần
                 return;
             }
+
+            const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
+            
+            if (audioBuffer.length < requiredNativeSamples) {
+                updateStatus("Đang nghe (chờ đủ buffer)...", "loading");
+                // 🎨 THAY ĐỔI: Thử lại sau 100ms
+                if (isListening) {
+                    setTimeout(runInference, 100); 
+                }
+                return;
+            }
+
+            // Chốt 2: Kiểm tra lại trước khi xử lý
+            if (!isListening || !audioContext || audioContext.state === 'closed') {
+                return;
+            }
+
             const audioChunk = audioBuffer.slice(audioBuffer.length - requiredNativeSamples);
             toggleBtn.disabled = true;
             updateStatus("Đang phân tích...", "loading");
 
             try {
+                // Chốt 3: Kiểm tra lần cuối trước khi gọi hàm nặng
+                if (!isListening || !audioContext || audioContext.state === 'closed') {
+                    if (!isListening) toggleBtn.disabled = false;
+                    return;
+                }
+                
                 const bufferToResample = audioContext.createBuffer(1, audioChunk.length, audioContext.sampleRate);
                 bufferToResample.copyToChannel(audioChunk, 0);
+                
+                // 🎨 THAY ĐỔI (QUAN TRỌNG): Lưu sampleRate TRƯỚC KHI await
+                const currentSampleRate = audioContext.sampleRate;
+
                 const resampledData = await resampleAudio(bufferToResample, TARGET_SR);
                 const processedData = padOrCut(resampledData, TARGET_LENGTH);
                 const spectrogramTensor = await computeSpectrogram(processedData);
-                const [prediction, probability] = await runOnnxModel(spectrogramTensor);
 
+                // Chốt 4: Kiểm tra sau các hàm await tốn thời gian
+                if (!isListening) {
+                    spectrogramTensor.dispose(); // Dọn dẹp
+                    return;
+                }
+
+                const [prediction, probability] = await runOnnxModel(spectrogramTensor);
+                frameCount++;
+                
                 if (prediction === "True" && probability > THRESHOLD) {
                     updateStatus(
                         `<strong>Phát hiện từ khóa!</strong> (Xác suất: ${(probability * 100).toFixed(2)}%)<br>
                         🔄 Đang gửi tới Model2 (xác thực người nói)...`,
                         "loading"
                     );
-                    stopListening();
+                    
+                    // 🎨 THAY ĐỔI (QUAN TRỌNG): Gọi stopListening (hàm này sẽ set isListening = false)
+                    stopListening(); 
 
                     try {
-                        const wavBlob = await exportWavBlob(audioChunk, audioContext.sampleRate);
+                        // 🎨 THAY ĐỔI: Sử dụng biến sampleRate đã lưu
+                        const wavBlob = await exportWavBlob(audioChunk, currentSampleRate); 
                         const formData = new FormData();
                         formData.append("audio", wavBlob, "captured.wav");
                         formData.append("room_id", ROOM_ID);
@@ -308,12 +390,13 @@
                             method: "POST",
                             body: formData
                         });
-
+                        
+                        // (Phần logic .json() và hiển thị kết quả giữ nguyên như cũ)
                         const data = await response.json();
                         if (data.error) {
                             updateStatus(`❌ Lỗi: ${data.error}`, "error");
                         } else {
-                            // 1️⃣ Tạo bảng hiển thị tất cả kết quả
+                            // 1️⃣ Tạo bảng hiển thị
                             let tableHtml = `
                                 <h3 class="font-bold text-lg mb-2 text-gray-800 text-center">🔊 Kết quả so khớp</h3>
                                 <div class="overflow-x-auto">
@@ -339,11 +422,8 @@
                                 </table>
                                 </div>
                             `;
-
-                            // 2️⃣ Hiển thị bảng
                             updateStatus(tableHtml, "success");
 
-                            // 3️⃣ Nếu có thiết bị của người khớp nhất thì hiển thị thêm
                             if (data.matched_member && data.functions && data.functions.length > 0) {
                                 // Delay 100ms để tránh bị updateStatus xóa mất
                                 setTimeout(() => {
@@ -379,8 +459,8 @@
                                 featuresBox.innerHTML = `<p class="text-gray-500 mt-4 italic">Không có thiết bị nào được phân quyền.</p>`;
                             }
 
-
-                            // 4️⃣ Reset nút điều khiển
+                            
+                            // 4️⃣ Reset nút
                             toggleBtn.disabled = false;
                             toggleBtn.textContent = "🎙️ Bắt đầu nghe";
                             toggleBtn.classList.remove('is-listening');
@@ -389,23 +469,40 @@
                     } catch (err) {
                         console.error("Lỗi khi gửi Django/Flask:", err);
                         updateStatus(`🔥 Lỗi khi xác thực giọng nói: ${err.message}`, "error");
+                        // Đảm bảo nút được bật lại
                         toggleBtn.disabled = false;
                         toggleBtn.textContent = "🎙️ Bắt đầu nghe";
                         toggleBtn.classList.remove('is-listening');
                     }
+
                 } else {
+                    // 🎨 THAY ĐỔI: Không phát hiện
                     updateStatus(
                         `Đang nghe... (Gần nhất: ${(probability * 100).toFixed(2)}%)`,
                         "loading"
                     );
                     toggleBtn.disabled = false;
+                    
+                    // 🎨 THÊM MỚI: Lên lịch chạy tiếp theo ngay lập tức
+                    if (isListening) {
+                        setTimeout(runInference, 0);
+                    }
                 }
 
             } catch (e) {
-                updateStatus(`Lỗi khi dự đoán: ${e.message}`, "error");
-                toggleBtn.disabled = false;
+                // 🎨 THAY ĐỔI: Lỗi dự đoán
+                console.error("Lỗi trong vòng lặp dự đoán:", e.message);
+                
+                if (isListening) {
+                    // Nếu vẫn đang nghe, thử chạy lại
+                    updateStatus(`Lỗi dự đoán: ${e.message}. Đang thử lại...`, "error");
+                    toggleBtn.disabled = false;
+                    setTimeout(runInference, 0); // Lên lịch chạy lại
+                } else {
+                    // Nếu đã bị dừng, chỉ cần đảm bảo UI đúng
+                    toggleBtn.disabled = false;
+                }
             }
-
         }
 
         // 🔧 Chuyển mảng Float32Array thành file WAV (GIỮ NGUYÊN)
