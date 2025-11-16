@@ -6,14 +6,12 @@ from django.views.decorators.csrf import csrf_exempt
 import numpy as np, json, os, tempfile
 from sklearn.metrics.pairwise import cosine_similarity
 
-# 🔹 Import mô hình nhận dạng giọng nói
 try:
-    from audio_model.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+    from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
 except ImportError:
     GLOBAL_MODEL = None
     extract_embedding = None
 
-# 🔹 Ngưỡng nhận dạng (cosine từ 0 → 1)
 VOICE_THRESHOLD = 0.5
 
 DEVICE_NAMES = ["Bếp", "Ti vi", "Máy lạnh", "Quạt", "Quạt trần", "Đèn"]
@@ -37,27 +35,17 @@ def verify_voice(request):
     if not room_id:
         return JsonResponse({"error": "Thiếu room_id"}, status=400)
 
-    # 🔹 Lấy object Room (để kiểm tra tồn tại)
     room = get_object_or_404(Room, id=room_id)
 
-    # 🔹 Lấy toàn bộ thành viên có cùng room_id (lưu dưới dạng số)
     members = MemberRecord.objects.filter(room=room.id)
 
-
-
-
-    # ========================================================
-    # 🟩 Xử lý audio và so sánh với tất cả thành viên
-    # ========================================================
     tmp_file_path = None
     try:
-        # Lưu file audio tạm để trích xuất embedding
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
             for chunk in audio_file.chunks():
                 tmp_file.write(chunk)
             tmp_file_path = tmp_file.name
 
-        # Trích xuất embedding giọng nói mới
         new_emb = extract_embedding(GLOBAL_MODEL, tmp_file_path)
         new_emb_2d = new_emb.reshape(1, -1)
 
@@ -75,16 +63,15 @@ def verify_voice(request):
 
             ref_emb_array = np.array(ref_emb_list)
             scores = cosine_similarity(new_emb_2d, ref_emb_array)
-            similarity = float(np.mean(scores[0]))  # 0 → 1
+            similarity = float(np.mean(scores[0])) 
 
             results.append({
                 "name": member.name,
-                "similarity": round(similarity, 4),   # Giữ trong [0,1]
+                "similarity": round(similarity, 4),  
                 "is_match": similarity >= VOICE_THRESHOLD,
                 "is_owner": member.is_owner,
             })
 
-        # 🔹 Sắp xếp giảm dần theo similarity
         results.sort(key=lambda x: x["similarity"], reverse=True)
 
     except Exception as e:
@@ -93,9 +80,7 @@ def verify_voice(request):
         if tmp_file_path and os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
 
-    # ========================================================
-    # ✅ Tìm người khớp nhất (nếu có)
-    # ========================================================
+    
     matched_member = None
     best_result = max(results, key=lambda x: x["similarity"]) if results else None
 
@@ -112,11 +97,8 @@ def verify_voice(request):
     else:
         functions = []
 
-    # ========================================================
-    # ✅ Trả về toàn bộ kết quả + thiết bị nếu có
-    # ========================================================
     return JsonResponse({
-        "results": results,  # Danh sách tất cả thành viên
+        "results": results,  
         "matched_member": best_result["name"] if best_result else None,
         "room_id": room_id,
         "functions": functions

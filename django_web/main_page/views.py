@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from room_registering_page.models import Room
 from .forms import RoomSearchForm
 from django.urls import reverse
+from django.utils.translation import gettext as _ 
 
 def home(request):
     message = None
@@ -15,7 +16,7 @@ def home(request):
             if room:
                 return redirect(reverse('action_room:action_room_view', args=[room.id]))
             else:
-                message = f"Phòng {room_number} chưa được tạo."
+                message = _("Căn hộ mã {room_number} chưa được tạo.").format(room_number=room_number)
     else:
         form = RoomSearchForm()
 
