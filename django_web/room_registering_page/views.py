@@ -20,7 +20,6 @@ def create_owner_and_room(request):
 
         record = MemberRecord.objects.create(name=name, buttons=buttons, is_owner=True)
 
-        # Trích xuất embedding cục bộ
         if GLOBAL_MODEL and extract_embedding:
             embeddings_to_save = {}
             for i in range(1, 4):
@@ -39,14 +38,12 @@ def create_owner_and_room(request):
                     embeddings_to_save[f"audio{i}"] = np.array(emb_array, dtype=np.float32).tobytes()
 
                 except Exception as e:
-                    # Gặp lỗi khi xử lý file audio
                     pass 
                 
                 finally:
                     if tmp_file_path and os.path.exists(tmp_file_path):
                         os.remove(tmp_file_path)
             
-            # Lưu các embedding vào record
             if embeddings_to_save:
                 update_fields = []
                 for field, data in embeddings_to_save.items():
@@ -54,7 +51,6 @@ def create_owner_and_room(request):
                     update_fields.append(field)
                 record.save(update_fields=update_fields)
 
-        # Tạo phòng mới
         room_number = request.POST.get('room_number') or f"R{record.id:04d}"
         password = request.POST.get('password') or "1234"
 

@@ -1,94 +1,221 @@
+{% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Wake-Word Detector</title>
+
+{% block title %}Voice Wake-Word Detector{% endblock %}
+
+{% block extra_css %}
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
     
     <style>
-        /* Thêm style cho nút bấm disabled */
-        #toggle-btn:disabled {
-            background-color: #9ca3af; /* gray-400 */
-            cursor: not-allowed;
-            animation: none; /* Tắt animation khi disabled */
-        }
+    body {
+        background-image: url("{% static 'images/background3.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+
+        height: auto;  
+        min-height: 100vh; 
+
+        font-family: "Segoe UI", sans-serif; 
+    }
         
-        /* 🎨 THÊM MỚI: Animation "breathing" cho nút khi đang nghe */
-        @keyframes pulse-shadow {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); /* blue-500 */
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-            }
+        #toggle-btn:disabled {
+            background-color: #9ca3af; 
+            cursor: not-allowed;
+            animation: none; 
         }
+    
         #toggle-btn.is-listening {
-            /* Khi chạy, chuyển sang màu đỏ và giữ hiệu ứng */
-            background-color: #ef4444; /* red-500 */
+            background-color: #ef4444; 
             animation: pulse-shadow 2s infinite;
         }
         #toggle-btn.is-listening:hover {
-            background-color: #dc2626; /* red-600 */
+            background-color: #dc2626;
         }
-    </style>
-</head>
-<body class="bg-gray-100 font-sans antialiased">
-    <div class="container mx-auto p-4 sm:p-8 max-w-2xl">
-        <div class="bg-white rounded-lg shadow-xl overflow-hidden">
-            <div class="p-6 sm:p-8">
-                <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-6 flex items-center justify-center">
-                    <span class="mr-3">🎤</span> Real-time Wake Word Detector
-                </h1>
+        .container {
+            background: rgba(255, 255, 255, 0.0);
+    
+        }
+        
+    .smart-home-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem; 
+        text-align: center; 
+    }
+
+    .smart-home-text {
+        font-size: 2.5rem; 
+        font-weight: 800; 
+        color: #1a202c; 
+        letter-spacing: -0.025em; 
+        
+        background: linear-gradient(to right, #184a9b, #26085a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15); 
+    }
+    .smart-home-name {
+        margin-top: -1.5rem; 
+        margin-bottom: 2rem; 
+        
+        text-align: center;
+        
+        display: inline-block; 
+        padding: 0.5rem 1.5rem; 
+        background: rgba(255, 255, 255, 0.25); 
+        border-radius: 9999px; 
+        border: 1px solid rgba(255, 255, 255, 0.4); 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(4px); 
+    }
+    
+    .room-label {
+        font-size: 1rem; 
+        font-weight: 500; 
+        color: #0f0636; 
+        opacity: 0.7; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em; 
+        margin-right: 0.5rem; 
+    }
+    
+    .room-id {
+        font-size: 1.25rem; 
+        font-weight: 700; 
+        color: #0f0636; 
+        
+        text-shadow: 0 0 5px rgba(15, 6, 54, 0.3);
+    }
+    .page-subtitle {
+        font-size: 1.125rem; /* 18px */
+        font-weight: 500; 
+        color: #374151; 
+        line-height: 1.6; 
+        text-align: center;
+        
+        margin-bottom: 2rem; 
+    }
+    .con {
+    max-width: 800px; 
+    width: 100%; 
+    height: auto; 
+    background: rgba(255, 255, 255, 0.85); 
+    border: 4px solid #0f0636;     
+    padding: 40px 20px; 
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    margin: 0 auto;
+    }
+    .status-box {
+        width: 100%; 
+        padding: 1rem; 
+        border-radius: 0.5rem; 
+        font-size: 1.125rem; 
+        font-weight: 500;
+        margin-bottom: 0.5rem; 
+        
+    }
+
+    .status-box .status-content-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-box.hidden {
+        display: none;
+    }
+
+    .status-box.status-loading {
+        background-color: transparent; 
+        color: #93C5FD; 
+    }
+
+    .status-box.status-success {
+        background-color: transparent; 
+        color: #A7F3D0; 
+    }
+
+    .status-box.status-error {
+        background-color: transparent; 
+        color: #FECACA; 
+    }
+
+
+    .status-box.status-info {
+        background-color: transparent; 
+        color: #E5E7EB; 
+    }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container"> 
+        <div class="con">
+            <h2 class="smart-home-name">
+                <span class="room-label">Căn hộ số:</span>
+                <span class="room-id">{{ room.room_number }}</span> 
+            </h2>
+            <h1 class="smart-home-title">
+                <span class="smart-home-text">Trợ Lý Ảo Căn Hộ</span>
+            </h1>
+            
+            <p class="page-subtitle magirn">
+                Nói từ khóa <strong class="keyword">"QUAD TEAM ƠI"</strong><br>để kích hoạt và xác nhận quyền điều khiển căn hộ.
+            </p>
+
+            <div class="flex justify-center mb-6">
+                <button id="toggle-btn"
+                        class="bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-300"
+                        onclick="toggleListening()">
+                    Bắt đầu nghe </button>
+            </div>
+
+            <div class="status-container">
+    
+                <div id="status" class="status-box hidden"></div>
                 
-                <p class="text-center text-gray-600 mb-6">
-                    Nhấn "Bắt đầu" và thử nói từ khóa.
-                    Model đang nghe và phân tích liên tục trong trình duyệt.
-                </p>
+                <div id="fps-display" class="fps-display"></div> 
+                <div id="features-box" class="features-box"></div>
+            </div>
 
-                <div class="flex justify-center mb-6">
-                    <button id="toggle-btn"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-300"
-                            onclick="toggleListening()">
-                        🎙️ Bắt đầu nghe </button>
-                </div>
 
-                <div class="mt-6 min-h-[150px]">
-                    <div id="status" class="mt-6 text-center p-4 rounded-lg bg-gray-50 hidden"></div>
-                        <div id="fps-display" class="text-center text-gray-500 text-sm mt-2"></div> 
-                    <div id="features-box" class="mt-6 text-center"></div>
-                </div>
-
-                <div class="flex justify-center items-center gap-4 mt-8 border-t pt-6">
-                    
-                    <a href="{% url 'main_page:home' %}"
-                       class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
-                              transform hover:scale-105 transition duration-300 ease-in-out">
-                        ⬅️ Out
-                    </a>
-
-                    <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="m-0">
-                        <button type="submit"
-                                class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
-                                       text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
-                                       transform hover:scale-105 transition duration-300 ease-in-out">
-                            📝 Đăng ký
-                        </button>
-                    </form>
-                </div>
-                </div>
+            <div class="flex justify-center items-center gap-4 mt-8 border-t pt-6">
+                
+                <a href="{% url 'main_page:home' %}"
+                class="bg-gray-500 hover:bg-gray-60 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                        transform hover:scale-105 transition duration-300 ease-in-out">
+                    Rời khỏi căn hộ
+                </a>
+<button type="button" 
+            onclick="location.reload();"
+            class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                   transform hover:scale-105 transition duration-300 ease-in-out">
+        Tải lại
+    </button>
+                <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="m-0">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
+                                text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                                transform hover:scale-105 transition duration-300 ease-in-out">
+                    Thêm thành viên
+                    </button>
+                </form>
+            </div>
         </div>
-    </div>
 
     <script>
-        // --- CÀI ĐẶT CẤU HÌNH (GIỮ NGUYÊN) ---
         const ONNX_MODEL_PATH = "{% static 'model/model1/voice_model_from_spec.onnx' %}";
         const ROOM_ID = "{{ room.id }}";
+        const VERIFY_URL = "{% url 'action_room:verify_voice' %}";
         const TARGET_SR = 16000;
         const TARGET_LENGTH = 40000;
         const N_FFT = 400;
@@ -96,7 +223,6 @@
         const THRESHOLD = 0.5;
         const INFERENCE_INTERVAL_MS = 750;
 
-        // --- Biến toàn cục (GIỮ NGUYÊN) ---
         let ortSession;
         let isListening = false;
         let audioContext;
@@ -109,11 +235,10 @@
         const featuresBox = document.getElementById('features-box');
 
         const fpsDisplay = document.getElementById('fps-display');
-        let frameCount = 0;
-        let fpsInterval;
-        // =================================================================
-        // CÁC HÀM CỐT LÕI (GIỮ NGUYÊN)
-        // =================================================================
+        let frameCount = 0;
+        let fpsInterval;
+        
+        
         async function resampleAudio(audioBuffer, targetSampleRate) {
             if (audioBuffer.sampleRate === targetSampleRate) {
                 return audioBuffer.getChannelData(0);
@@ -170,7 +295,6 @@
             return [prediction, probability];
         }
 
-        // 🎨 HÀM UPDATE UI (GIỮ NGUYÊN)
         function updateStatus(message, type) {
             featuresBox.innerHTML = "";
             statusDiv.classList.remove('hidden', 'bg-gray-50', 'bg-blue-100', 'bg-green-100', 'bg-red-100', 'text-gray-800', 'text-blue-800', 'text-green-800', 'text-red-800');
@@ -181,12 +305,11 @@
                 typeClass = 'bg-blue-100 text-blue-800';
                 icon = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
             } else if (type === 'success') {
-                typeClass = 'bg-green-100 text-green-800';
-                icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                typeClass = 'bg-white/0 text-blue-800';
             } else if (type === 'error') {
                 typeClass = 'bg-red-100 text-red-800';
                 icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-            } else { // 'info' hoặc mặc định
+            } else { 
                 typeClass = 'bg-gray-100 text-gray-800';
                 icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
             }
@@ -194,9 +317,6 @@
             statusDiv.innerHTML = `<div class="flex items-center justify-center">${icon} <span>${message}</span></div>`;
         }
 
-        // =================================================================
-        // LOGIC MỚI (REAL-TIME) - (GIỮ NGUYÊN)
-        // =================================================================
 
         async function loadModel() {
             toggleBtn.disabled = true;
@@ -235,17 +355,17 @@
                 isListening = true;
 
                 frameCount = 0;
-                if (fpsInterval) clearInterval(fpsInterval); // Xóa interval cũ nếu có
-                fpsInterval = setInterval(() => {
-                    if (fpsDisplay) {
-                        fpsDisplay.textContent = `FPS: ${frameCount}`;
-                    }
-                    frameCount = 0; // Reset bộ đếm
-                }, 1000); // Cập nhật mỗi giây
+                if (fpsInterval) clearInterval(fpsInterval); 
+                fpsInterval = setInterval(() => {
+                    if (fpsDisplay) {
+                        fpsDisplay.textContent = `FPS: ${frameCount}`;
+                    }
+                    frameCount = 0; 
+                }, 1000); 
 
                 runInference();
 
-                toggleBtn.textContent = "⏹️ Dừng nghe";
+                toggleBtn.textContent = "Dừng nghe";
                 toggleBtn.classList.add('is-listening');
                 updateStatus("Đang nghe...", "loading");
             } catch (e) {
@@ -253,21 +373,18 @@
             }
         }
 
-        // 🎨 THAY THẾ TOÀN BỘ HÀM NÀY
         function stopListening() {
             if (!isListening) return;
 
-            // 🎨 THAY ĐỔI QUAN TRỌNG: Đặt thành false ngay lập tức
-            // để ngăn chặn bất kỳ vòng lặp runInference nào sắp bắt đầu
             isListening = false; 
 
             if (fpsInterval) {
-                clearInterval(fpsInterval);
-                fpsInterval = null;
-            }
-            if (fpsDisplay) {
-                fpsDisplay.textContent = ""; // Xóa hiển thị
-            }
+                clearInterval(fpsInterval);
+                fpsInterval = null;
+            }
+            if (fpsDisplay) {
+                fpsDisplay.textContent = ""; 
+            }
 
             try {
                 if (scriptProcessor) {
@@ -278,17 +395,15 @@
                     micStream.getTracks().forEach(track => track.stop());
                     micStream = null;
                 }
-                // Kiểm tra an toàn trước khi đóng AudioContext
                 if (audioContext && audioContext.state !== 'closed') {
                     audioContext.close();
                     audioContext = null;
                 }
 
                 audioBuffer = new Float32Array(0);
-                toggleBtn.textContent = "🎙️ Bắt đầu nghe";
+                toggleBtn.textContent = "Bắt đầu nghe";
                 toggleBtn.classList.remove('is-listening');
                 
-                // 🎨 THÊM MỚI: Đảm bảo nút được bật lại
                 toggleBtn.disabled = false; 
                 
                 updateStatus("Đã dừng. Nhấn 'Bắt đầu' để nghe lại.", "info");
@@ -311,30 +426,25 @@
             }
         }
 
-        // 🎨 THAY THẾ TOÀN BỘ HÀM NÀY
         async function runInference() {
-            // Chốt 1: Dừng nếu không còn nghe nữa
             if (!isListening) return;
 
-            // Kiểm tra an toàn AudioContext
             if (!audioContext || audioContext.state === 'closed') {
                 console.warn("AudioContext đã đóng, dừng vòng lặp.");
-                stopListening(); // Dọn dẹp nếu cần
+                stopListening();
                 return;
             }
 
             const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
             
             if (audioBuffer.length < requiredNativeSamples) {
-                updateStatus("Đang nghe (chờ đủ buffer)...", "loading");
-                // 🎨 THAY ĐỔI: Thử lại sau 100ms
+                updateStatus("Đang nghe...", "loading");
                 if (isListening) {
                     setTimeout(runInference, 100); 
                 }
                 return;
             }
 
-            // Chốt 2: Kiểm tra lại trước khi xử lý
             if (!isListening || !audioContext || audioContext.state === 'closed') {
                 return;
             }
@@ -344,7 +454,6 @@
             updateStatus("Đang phân tích...", "loading");
 
             try {
-                // Chốt 3: Kiểm tra lần cuối trước khi gọi hàm nặng
                 if (!isListening || !audioContext || audioContext.state === 'closed') {
                     if (!isListening) toggleBtn.disabled = false;
                     return;
@@ -353,16 +462,14 @@
                 const bufferToResample = audioContext.createBuffer(1, audioChunk.length, audioContext.sampleRate);
                 bufferToResample.copyToChannel(audioChunk, 0);
                 
-                // 🎨 THAY ĐỔI (QUAN TRỌNG): Lưu sampleRate TRƯỚC KHI await
                 const currentSampleRate = audioContext.sampleRate;
 
                 const resampledData = await resampleAudio(bufferToResample, TARGET_SR);
                 const processedData = padOrCut(resampledData, TARGET_LENGTH);
                 const spectrogramTensor = await computeSpectrogram(processedData);
 
-                // Chốt 4: Kiểm tra sau các hàm await tốn thời gian
                 if (!isListening) {
-                    spectrogramTensor.dispose(); // Dọn dẹp
+                    spectrogramTensor.dispose(); 
                     return;
                 }
 
@@ -376,56 +483,55 @@
                         "loading"
                     );
                     
-                    // 🎨 THAY ĐỔI (QUAN TRỌNG): Gọi stopListening (hàm này sẽ set isListening = false)
                     stopListening(); 
 
                     try {
-                        // 🎨 THAY ĐỔI: Sử dụng biến sampleRate đã lưu
                         const wavBlob = await exportWavBlob(audioChunk, currentSampleRate); 
                         const formData = new FormData();
                         formData.append("audio", wavBlob, "captured.wav");
                         formData.append("room_id", ROOM_ID);
 
-                        const response = await fetch("/action_room/verify_voice/", {
+                        const response = await fetch(VERIFY_URL, { 
                             method: "POST",
                             body: formData
                         });
                         
-                        // (Phần logic .json() và hiển thị kết quả giữ nguyên như cũ)
                         const data = await response.json();
                         if (data.error) {
                             updateStatus(`❌ Lỗi: ${data.error}`, "error");
                         } else {
-                            // 1️⃣ Tạo bảng hiển thị
                             let tableHtml = `
-                                <h3 class="font-bold text-lg mb-2 text-gray-800 text-center">🔊 Kết quả so khớp</h3>
                                 <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse border border-gray-200 rounded-lg">
+                                <table class="mt-6 bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
                                     <thead>
-                                        <tr class="bg-gray-100 border-b">
-                                            <th class="py-2 px-3 border-r">Tên</th>
-                                            <th class="py-2 px-3 border-r text-center">Similarity</th>
-                                            <th class="py-2 px-3 text-center">Kết quả</th>
+                                        <tr class="bg-blue-100 border-b border-blue-200">
+                                            
+                                            <th class="py-2 px-3 border-r border-blue-200 text-black">Tên Thành Viên</th>
+                                            
+                                            <th class="py-2 px-3 border-r border-blue-200 text-center text-black">Độ Tương Đồng</th>
+                                            
+                                            <th class="py-2 px-3 text-center text-black">Kết quả</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         ${data.results.map(r => `
-                                            <tr class="border-b hover:bg-gray-50">
-                                                <td class="py-2 px-3 font-medium">${r.name}${r.is_owner ? " 👑" : ""}</td>
-                                                <td class="py-2 px-3 text-center">${r.similarity.toFixed(4)}</td>
+                                            <tr class="border-b border-blue-200 hover:bg-blue-50">
+                                                
+                                                <td class="py-2 px-3 font-medium text-black">${r.name}${r.is_owner ? " (Chủ hộ)" : ""}</td>
+                                                
+                                                <td class="py-2 px-3 text-center text-black">${r.similarity.toFixed(4)}</td>
                                                 <td class="py-2 px-3 text-center">
-                                                    ${r.is_match ? "✅ Khớp" : "❌"}
+                                                    ${r.is_match ? "✅" : "❌"}
                                                 </td>
                                             </tr>
                                         `).join("")}
                                     </tbody>
                                 </table>
-                                </div>
-                            `;
+                            </div>
+                        `;
                             updateStatus(tableHtml, "success");
 
                             if (data.matched_member && data.functions && data.functions.length > 0) {
-                                // Delay 100ms để tránh bị updateStatus xóa mất
                                 setTimeout(() => {
                                     const gradientColors = [
                                         "from-red-400 to-red-500",
@@ -438,16 +544,16 @@
 
                                     const deviceCards = data.functions.map((f, i) => `
                                         <div class="bg-gradient-to-br ${gradientColors[i % gradientColors.length]} 
-                                                    text-white font-semibold rounded-xl shadow-md flex items-center justify-center 
-                                                    w-28 h-14 sm:w-32 sm:h-16 hover:scale-105 hover:shadow-lg transform transition-all duration-300 ease-in-out">
+                                                     text-white font-semibold rounded-xl shadow-md flex items-center justify-center 
+                                                     w-28 h-14 sm:w-32 sm:h-16 hover:scale-105 hover:shadow-lg transform transition-all duration-300 ease-in-out">
                                             ${f}
                                         </div>
                                     `).join("");
 
                                     featuresBox.innerHTML = `
-                                        <div class="mt-6 bg-green-50 p-6 rounded-2xl shadow-inner border border-green-200">
-                                            <h3 class="text-xl font-bold mb-5 text-green-700 text-center">
-                                                Thiết bị của ${data.matched_member}
+                                        <div class="mt-6 bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
+                                            <h3 class="text-xl font-bold mb-5 text-black-700 text-center">
+                                                Quyền truy cập vào các thiết bị của ${data.matched_member}
                                             </h3>
                                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center place-items-center">
                                                 ${deviceCards}
@@ -460,52 +566,44 @@
                             }
 
                             
-                            // 4️⃣ Reset nút
                             toggleBtn.disabled = false;
                             toggleBtn.textContent = "🎙️ Bắt đầu nghe";
                             toggleBtn.classList.remove('is-listening');
                         }
 
                     } catch (err) {
-                        console.error("Lỗi khi gửi Django/Flask:", err);
+                        console.error("Lỗi khi gửi giọng nói:", err);
                         updateStatus(`🔥 Lỗi khi xác thực giọng nói: ${err.message}`, "error");
-                        // Đảm bảo nút được bật lại
                         toggleBtn.disabled = false;
                         toggleBtn.textContent = "🎙️ Bắt đầu nghe";
                         toggleBtn.classList.remove('is-listening');
                     }
 
                 } else {
-                    // 🎨 THAY ĐỔI: Không phát hiện
                     updateStatus(
-                        `Đang nghe... (Gần nhất: ${(probability * 100).toFixed(2)}%)`,
+                        `Đang nghe...)`,
                         "loading"
                     );
                     toggleBtn.disabled = false;
                     
-                    // 🎨 THÊM MỚI: Lên lịch chạy tiếp theo ngay lập tức
                     if (isListening) {
                         setTimeout(runInference, 0);
                     }
                 }
 
             } catch (e) {
-                // 🎨 THAY ĐỔI: Lỗi dự đoán
                 console.error("Lỗi trong vòng lặp dự đoán:", e.message);
                 
                 if (isListening) {
-                    // Nếu vẫn đang nghe, thử chạy lại
                     updateStatus(`Lỗi dự đoán: ${e.message}. Đang thử lại...`, "error");
                     toggleBtn.disabled = false;
-                    setTimeout(runInference, 0); // Lên lịch chạy lại
+                    setTimeout(runInference, 0);
                 } else {
-                    // Nếu đã bị dừng, chỉ cần đảm bảo UI đúng
                     toggleBtn.disabled = false;
                 }
             }
         }
 
-        // 🔧 Chuyển mảng Float32Array thành file WAV (GIỮ NGUYÊN)
         async function exportWavBlob(float32Array, sampleRate) {
             const buffer = new ArrayBuffer(44 + float32Array.length * 2);
             const view = new DataView(buffer);
@@ -533,9 +631,7 @@
             return new Blob([buffer], { type: "audio/wav" });
         }
 
-        // Tải model ngay khi trang được mở
         loadModel();
 
     </script>
-</body>
-</html>
+{% endblock %}

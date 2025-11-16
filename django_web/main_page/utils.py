@@ -6,10 +6,6 @@ import os
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# ============================================================
-# 🧩 Các class model giống code train
-# ============================================================
-
 class Swish(nn.Module):
     def forward(self, x): return x * torch.sigmoid(x)
 
@@ -78,9 +74,6 @@ class MFAConformer(nn.Module):
         emb = self.bn(self.post(out))
         return F.normalize(torch.nan_to_num(emb), p=2, dim=1)
 
-# ============================================================
-# 🔍 Load model + inference
-# ============================================================
 
 def load_model(ckpt_path="best_model.pt"):
     model = MFAConformer().to(DEVICE)
@@ -96,7 +89,6 @@ def extract_embedding(model, audio_path):
     wav = wav.mean(0, keepdim=True)  # mono
     wav = torchaudio.functional.resample(wav, sr, 16000)
 
-    # mel-spectrogram
     mel_spec = torchaudio.transforms.MelSpectrogram(
         sample_rate=16000,
         n_fft=512,
@@ -105,8 +97,7 @@ def extract_embedding(model, audio_path):
     )(wav)
     mel_spec = mel_spec.clamp(min=1e-5).log()
 
-    # ✅ Fix: chuẩn hóa chiều dài đầu vào
-    max_len = 224   # chiều mel model mong đợi
+    max_len = 224  
     if mel_spec.shape[-1] < max_len:
         pad = max_len - mel_spec.shape[-1]
         mel_spec = torch.nn.functional.pad(mel_spec, (0, pad))
@@ -120,7 +111,6 @@ def extract_embedding(model, audio_path):
 
 CKPT_PATH = os.path.join(settings.BASE_DIR, "static", "model", "model2", "best_model.pt")
 
-# Tải mô hình một lần khi Django khởi động
 try:
     GLOBAL_MODEL = load_model(ckpt_path=CKPT_PATH)
     print("✅ MFAConformer đã được tải thành công vào bộ nhớ.")

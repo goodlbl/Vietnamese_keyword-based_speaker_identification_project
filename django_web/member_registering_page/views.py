@@ -19,7 +19,6 @@ def register_view(request):
 
 def submit_all(request):
     if request.method == 'POST':
-        # --- Phần 1: Lấy thông tin cơ bản ---
         room_id = request.session.get('room_id')
         if not room_id:
             return JsonResponse({'success': False, 'error': 'No room_id in session'}, status=400)
@@ -31,7 +30,6 @@ def submit_all(request):
         buttons_json = request.POST.get('buttons')
         buttons = json.loads(buttons_json) if buttons_json else []
 
-        # 🟩 Tạo record ban đầu
         member = MemberRecord.objects.create(
             name=name,
             room=room_id,

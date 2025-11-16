@@ -1,189 +1,237 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Quad Team</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f2f2f2;
-        }
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
 
-        header {
-            background-color: #007BFF;
-            color: white;
-            font-size: 36px;
-            font-weight: bold;
-            text-align: center;
-            padding: 30px 0;
-        }
+{% block title %}Đăng ký thành viên{% endblock %}
 
-        .name-input {
-            text-align: center;
-            margin: 30px 0;
-        }
-        .name-input input {
-            width: 60%;
-            padding: 12px 15px;
-            font-size: 18px;
-            border: 2px solid #007BFF;
-            border-radius: 6px;
-            outline: none;
-        }
+{% block extra_css %}
+<style>
+    body {
+        background-image: url("{% static 'images/background3.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
 
-        .instruction {
-            text-align: center;
-            font-size: 20px;
-            color: #333;
-            margin-bottom: 15px;
-        }
+        height: auto;  
+        min-height: 100vh; 
 
-        .audio-section {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px auto;
-            width: 90%;
-        }
+        font-family: "Segoe UI", sans-serif; 
+    }
 
-        .audio-box {
-            background-color: white;
-            border: 2px solid #007BFF;
-            border-radius: 12px;
-            padding: 20px;
-            width: 30%;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+    header {
+        background-color: #007BFF;
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        text-align: center;
+        padding: 30px 0;
+    }
 
-        .audio-box h3 {
-            margin-top: 0;
-            color: #007BFF;
-        }
+    .name-input {
+        text-align: center;
+        margin: 30px 0;
+    }
+    .name-input input {
+        width: 60%;
+        padding: 12px 15px;
+        font-size: 18px;
+        border: 2px solid #007BFF;
+        border-radius: 6px;
+        outline: none;
+    }
 
-        .audio-box button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-        }
+    .instruction {
+        text-align: center;
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 15px;
+    }
 
-        .audio-box button.recording {
-            background-color: red;
-        }
+    .audio-section {
+        display: flex;
+        justify-content: space-around;
+        margin: 20px auto;
+        width: 90%;
+    }
 
-        .spacer { height: 40px; }
+    .audio-box {
+        background-color: white;
+        border: 2px solid #007BFF;
+        border-radius: 12px;
+        padding: 20px;
+        width: 30%;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
 
-        .button-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            width: 60%;
-            margin: 0 auto;
-        }
+    .audio-box h3 {
+        margin-top: 0;
+        color: #01254e;
+    }
 
-        .button-grid button {
-            width: 100%;
-            padding: 25px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-        }
+    .audio-box button {
+        background-color: #327bcf;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+    }
 
-        .btn1 { background-color: #FF5733; }
-        .btn2 { background-color: #33FF57; }
-        .btn3 { background-color: #3357FF; }
-        .btn4 { background-color: #FF33A1; }
-        .btn5 { background-color: #FF8C33; }
-        .btn6 { background-color: #33FFF2; }
+    .audio-box button.recording {
+        background-color: red;
+    }
 
-        .off { filter: brightness(0.6) grayscale(0.3); }
+    .spacer { height: 40px; }
 
-        .corner-button {
-            position: fixed;
-            bottom: 20px;
-            padding: 15px 25px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-        }
+    .button-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 60%;
+        margin: 0 auto;
+    }
 
-        .bottom-right { right: 20px; background-color: #007BFF; }
-        .bottom-left { left: 20px; background-color: red; }
-    </style>
-    <script>
-        const csrftoken = '{{ csrf_token }}';
-    </script>
+    .button-grid button {
+        width: 100%;
+        padding: 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        transition: 0.2s;
+    }
 
-</head>
-<body>
+    .btn1 { background-color: #FF5733; font-weight: bold;}
+    .btn2 { background-color: #33FF57; font-weight: bold; }
+    .btn3 { background-color: #3357FF; font-weight: bold;}
+    .btn4 { background-color: #FF33A1; font-weight: bold; }
+    .btn5 { background-color: #FF8C33; font-weight: bold;}
+    .btn6 { background-color: #33FFF2; font-weight: bold;}
 
-<header>Quad team</header>
+    .off { filter: brightness(0.6) grayscale(0.3); }
 
-<!-- Ô nhập tên -->
-<div class="name-input">
-    <input type="text" id="username" placeholder="Nhập tên của bạn...">
-</div>
+    .corner-button {
+        position: fixed;
+        bottom: 20px;
+        padding: 15px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+    }
 
-<!-- Dòng hướng dẫn -->
-<div class="instruction">
-    Bạn hãy đọc theo các cụm sau đây để làm mẫu so sánh
-</div>
+    .bottom-right { right: 20px; background-color: #007BFF; font-weight: bold; }
+    .bottom-left { left: 20px; background-color: red; font-weight: bold; }
+    .container {
+    background: rgba(255, 255, 255, 0.85); 
+    
+    width: 80%;
+    
+    border: 4px solid #0f0636;       
+    padding: 40px 70px; 
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    
+    box-sizing: border-box; 
+}
 
-<!-- 3 ô thu âm -->
-<div class="audio-section">
-    <div class="audio-box" id="rec1">
-        <h3>“Quad team ơi”</h3>
-        <button onclick="toggleRecord(1)">🎙️ Bắt đầu thu</button>
-        <audio controls id="player1" style="display:none;"></audio>
+@media (max-width: 768px) {
+    .container {
+        width: 90%;
+        padding: 40px 20px; 
+    }
+}
+.audio-box > * {
+    margin-bottom: 12px;
+}
+.page-header {
+        color: #150369;
+        font-size: 32px; 
+        font-weight: bold; 
+        text-align: center;
+        padding: 25px 0;
+        
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container">
+    <h3 class="page-header">{% trans "Đăng ký thành viên" %}</h3>
+
+    <div class="name-input">
+        <input type="text" id="username" placeholder="Nhập tên của bạn...">
     </div>
-    <div class="audio-box" id="rec2">
-        <h3>“Mở lên Quad team ơi”</h3>
-        <button onclick="toggleRecord(2)">🎙️ Bắt đầu thu</button>
-        <audio controls id="player2" style="display:none;"></audio>
-    </div>
-    <div class="audio-box" id="rec3">
-        <h3>“Quad team ơi thế nào”</h3>
-        <button onclick="toggleRecord(3)">🎙️ Bắt đầu thu</button>
-        <audio controls id="player3" style="display:none;"></audio>
-    </div>
+
+    <div class="instruction" 
+     style="color: #0e0246; 
+            font-weight: bold; 
+            text-align: center; 
+            padding: 10px 15px; 
+            border-radius: 10px;
+            max-width: 600px; 
+            margin: 20px auto;">
+    Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền
 </div>
 
-<div class="spacer"></div>
 
-<!-- 6 nút trạng thái -->
-<div class="button-grid">
-    <button class="btn1 off" onclick="toggleBtn(1)">Bếp</button>
-    <button class="btn2 off" onclick="toggleBtn(2)">Ti vi</button>
-    <button class="btn3 off" onclick="toggleBtn(3)">Máy lạnh</button>
-    <button class="btn4 off" onclick="toggleBtn(4)">Quạt</button>
-    <button class="btn5 off" onclick="toggleBtn(5)">Quạt trần</button>
-    <button class="btn6 off" onclick="toggleBtn(6)">Đèn</button>
+    <div class="audio-section">
+        <div class="audio-box" id="rec1">
+            <h3>“Quad team ơi”</h3>
+            <button onclick="toggleRecord(1)">Bắt đầu thu</button>
+            <audio controls id="player1" style="display:none;"></audio>
+        </div>
+        <div class="audio-box" id="rec2">
+            <h3>“Mở lên Quad team ơi”</h3>
+            <button onclick="toggleRecord(2)">Bắt đầu thu</button>
+            <audio controls id="player2" style="display:none;"></audio>
+        </div>
+        <div class="audio-box" id="rec3">
+            <h3>“Quad team ơi thế nào”</h3>
+            <button onclick="toggleRecord(3)">Bắt đầu thu</button>
+            <audio controls id="player3" style="display:none;"></audio>
+        </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="button-grid">
+        <button class="btn1 off" onclick="toggleBtn(1)">Bếp</button>
+        <button class="btn2 off" onclick="toggleBtn(2)">Ti vi</button>
+        <button class="btn3 off" onclick="toggleBtn(3)">Máy lạnh</button>
+        <button class="btn4 off" onclick="toggleBtn(4)">Quạt</button>
+        <button class="btn5 off" onclick="toggleBtn(5)">Quạt trần</button>
+        <button class="btn6 off" onclick="toggleBtn(6)">Đèn</button>
+    </div>
+
+    <button class="corner-button bottom-right" onclick="sendAll()">Đăng ký</button>
+
+    <form method="POST" action="/member_registering_page/go_back/" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="corner-button bottom-left">Quay lại</button>
+    </form>
 </div>
-
-<!-- Nút góc -->
-<button class="corner-button bottom-left" onclick="resetAll()">Quay lại</button>
-<button class="corner-button bottom-right" onclick="sendAll()">Đăng ký</button>
-
-<form method="POST" action="/member_registering_page/go_back/" style="display:inline;">
-    {% csrf_token %}
-    <button type="submit" class="corner-button bottom-left">Quay lại</button>
-</form>
 
 <script>
+const csrftoken = '{{ csrf_token }}';
+const SUBMIT_URL = "{% url 'member_registering_page:submit_all' %}";
+const GO_BACK_URL = "{% url 'member_registering_page:go_back' %}";
+
 let recorders = {};
 let audioChunks = {};
 let streams = {};
-let audioBlobs = {};  // lưu 3 file audio
-let buttonStates = [0,0,0,0,0,0];  // 6 nút trạng thái
+let audioBlobs = {};  
+let buttonStates = [0,0,0,0,0,0];  
 
 async function toggleRecord(id) {
     const btn = document.querySelector(`#rec${id} button`);
@@ -210,16 +258,15 @@ async function toggleRecord(id) {
 
             recorder.start();
             recorders[id] = recorder;
-            btn.textContent = "⏹ Đang thu...";
+            btn.textContent = "Đang thu...";
             btn.classList.add("recording");
 
-            // Tự dừng sau 2.5s
             setTimeout(() => {
                 if (recorders[id]) {
                     recorders[id].stop();
                     streams[id].getTracks().forEach(track => track.stop());
                     recorders[id] = null;
-                    btn.textContent = "🎙️ Bắt đầu thu";
+                    btn.textContent = "Bắt đầu thu";
                     btn.classList.remove("recording");
                 }
             }, 2500);
@@ -228,11 +275,10 @@ async function toggleRecord(id) {
             alert("Không truy cập được micro: " + err.message);
         }
     } else {
-        // Nếu bấm lại khi đang thu thì dừng ngay
         recorders[id].stop();
         streams[id].getTracks().forEach(track => track.stop());
         recorders[id] = null;
-        btn.textContent = "🎙️ Bắt đầu thu";
+        btn.textContent = "Bắt đầu thu";
         btn.classList.remove("recording");
     }
 }
@@ -255,7 +301,7 @@ async function sendAll() {
         if (audioBlobs[i]) formData.append(`audio${i}`, audioBlobs[i], `sample${i}.webm`);
     }
 
-    const resp = await fetch("/member_registering_page/submit_all/", {
+    const resp = await fetch(SUBMIT_URL, {
         method: "POST",
         body: formData,
         headers: { "X-CSRFToken": csrftoken }
@@ -264,13 +310,11 @@ async function sendAll() {
     const data = await resp.json();
 
     if (data.success) {
-        window.location.href = data.redirect_url;  // ✅ chuyển trang
+        window.location.href = data.redirect_url; 
     } else {
         alert("❌ Gửi thất bại: " + (data.error || "Lỗi không xác định"));
     }
 }
-
-
 </script>
-</body>
-</html>
+
+{% endblock %}
