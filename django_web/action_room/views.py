@@ -5,6 +5,7 @@ from member_registering_page.models import MemberRecord
 from django.views.decorators.csrf import csrf_exempt
 import numpy as np, json, os, tempfile
 from sklearn.metrics.pairwise import cosine_similarity
+from django.utils.translation import gettext_lazy as _
 
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
@@ -14,7 +15,16 @@ except ImportError:
 
 VOICE_THRESHOLD = 0.5
 
-DEVICE_NAMES = ["Bếp", "Ti vi", "Máy lạnh", "Quạt", "Quạt trần", "Đèn"]
+
+DEVICE_NAMES = [
+    _("Bếp"),
+    _("Ti vi"),
+    _("Máy lạnh"),
+    _("Quạt"),
+    _("Cửa"),
+    _("Đèn")
+]
+
 
 
 def action_room_view(request, room_id):
