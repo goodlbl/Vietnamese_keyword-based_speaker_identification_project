@@ -1,24 +1,19 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.i18n import i18n_patterns
-from django.views.generic import RedirectView
+from django.views.i18n import JavaScriptCatalog
 
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
-]
-
-urlpatterns += [
-    path('', RedirectView.as_view(url='/vi/', permanent=False)),
+    path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
 ]
 
 urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
-    
     path('', include('main_page.urls', namespace='main_page')),
     path('member_registering_page/', include('member_registering_page.urls')),
     path('room_registering_page/', include('room_registering_page.urls')),
     path('check_password/', include('check_password.urls')),
     path('action_room/', include('action_room.urls')),
-
     prefix_default_language=True,
 )

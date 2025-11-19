@@ -75,7 +75,7 @@ class MFAConformer(nn.Module):
         return F.normalize(torch.nan_to_num(emb), p=2, dim=1)
 
 
-def load_model(ckpt_path="best_model.pt"):
+def load_model(ckpt_path="model2.pt"):
     model = MFAConformer().to(DEVICE)
     ckpt = torch.load(ckpt_path, map_location=DEVICE)
     state_dict = ckpt["model"] if "model" in ckpt else ckpt
@@ -109,7 +109,7 @@ def extract_embedding(model, audio_path):
     return emb
 
 
-CKPT_PATH = os.path.join(settings.BASE_DIR, "static", "model", "model2", "best_model.pt")
+CKPT_PATH = os.path.join(settings.BASE_DIR, "static", "model", "model2", "model2.pt")
 
 try:
     GLOBAL_MODEL = load_model(ckpt_path=CKPT_PATH)

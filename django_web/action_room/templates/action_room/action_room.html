@@ -2,24 +2,23 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Voice Wake-Word Detector{% endblock %}
+{% block title %}{% trans "Vào căn hộ" %} {% endblock %}
 
 {% block extra_css %}
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
     
+    <script src="{% url 'javascript-catalog' %}"></script>
     <style>
     body {
-        background-image: url("{% static 'images/background3.jpg' %}");
+        background-image: url("{% static 'images/background.jpg' %}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
-
         height: auto;  
         min-height: 100vh; 
-
         font-family: "Segoe UI", sans-serif; 
     }
         
@@ -153,67 +152,104 @@
         background-color: transparent; 
         color: #E5E7EB; 
     }
+    .smart-owner {
+        display: inline-block; 
+        margin-top: -1.5rem;   
+        margin-bottom: 2rem;
+        text-align: center;
+        padding: 0.5rem 1.5rem; 
+        
+        background: rgba(255, 255, 255, 0.25); 
+        border-radius: 9999px; 
+        border: 1px solid rgba(255, 255, 255, 0.4); 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(4px); 
+    }
+    
+    .room-owner {
+        font-size: 1rem;    
+        font-weight: 500;
+        color: #0f0636;        
+        opacity: 0.7;          
+        text-transform: uppercase; 
+        letter-spacing: 0.05em;  
+        margin-right: 0.5rem;  
+    }
+    
+    .owner-name {
+        font-size: 1.25rem;   
+        font-weight: 700;      
+        color: #0f0636;        
+        text-shadow: 0 0 5px rgba(15, 6, 54, 0.3); 
+    }
     
 </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container"> 
-        <div class="con">
-            <h2 class="smart-home-name">
-                <span class="room-label">Căn hộ số:</span>
-                <span class="room-id">{{ room.room_number }}</span> 
-            </h2>
-            <h1 class="smart-home-title">
-                <span class="smart-home-text">Trợ Lý Ảo Căn Hộ</span>
-            </h1>
-            
-            <p class="page-subtitle magirn">
-                Nói từ khóa <strong class="keyword">"QUAD TEAM ƠI"</strong><br>để kích hoạt và xác nhận quyền điều khiển căn hộ.
-            </p>
 
-            <div class="flex justify-center mb-6">
-                <button id="toggle-btn"
-                        class="bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-300"
-                        onclick="toggleListening()">
-                    Bắt đầu nghe </button>
-            </div>
+<div class="container"> 
+    <div class="con">
+        <h2 class="smart-home-name">
+            <span class="room-label">{% trans "Căn hộ số:" %}</span>
+            <span class="room-id">{{ room.room_number }}</span> 
+        </h2>
+        <h2 class="smart-owner">
+            <span class="room-owner">{% trans "Chủ hộ:" %}</span>
+            <span class="owner-name">{{ room.owner.name }}</span> 
+        </h2>
+        <h1 class="smart-home-title">
+            <span class="smart-home-text">{% trans "Trợ Lý Ảo Căn Hộ" %}</span>
+        </h1>
+        
+        <p class="page-subtitle magirn">
+            {% blocktrans %}Nói từ khóa "QUAD TEAM ƠI" để kích hoạt và xác nhận quyền điều khiển căn hộ.{% endblocktrans %}
+        </p>
 
-            <div class="status-container">
-    
-                <div id="status" class="status-box hidden"></div>
-                
-                <div id="fps-display" class="fps-display"></div> 
-                <div id="features-box" class="features-box"></div>
-            </div>
-
-
-            <div class="flex justify-center items-center gap-4 mt-8 border-t pt-6">
-                
-                <a href="{% url 'main_page:home' %}"
-                class="bg-gray-500 hover:bg-gray-60 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
-                        transform hover:scale-105 transition duration-300 ease-in-out">
-                    Rời khỏi căn hộ
-                </a>
-<button type="button" 
-            onclick="location.reload();"
-            class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
-                   transform hover:scale-105 transition duration-300 ease-in-out">
-        Tải lại
-    </button>
-                <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="m-0">
-                    <button type="submit"
-                            class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
-                                text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
-                                transform hover:scale-105 transition duration-300 ease-in-out">
-                    Thêm thành viên
-                    </button>
-                </form>
-            </div>
+        <div class="flex justify-center mb-6">
+            <button id="toggle-btn"
+                    class="bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-300"
+                    onclick="toggleListening()">
+                {% trans "Bắt đầu nghe" %}
+            </button>
         </div>
 
+        <div class="status-container">
+            <div id="status" class="status-box hidden"></div>
+            <div id="fps-display" class="fps-display"></div> 
+            <div id="features-box" class="features-box"></div>
+        </div>
+
+        <div class="flex justify-center items-center gap-4 mt-8 border-t pt-6">
+            
+            <a href="{% url 'main_page:home' %}"
+               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                      transform hover:scale-105 transition duration-300 ease-in-out">
+                {% trans "Rời khỏi căn hộ" %}
+            </a>
+
+            <button type="button" 
+                    onclick="location.reload();"
+                    class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                           transform hover:scale-105 transition duration-300 ease-in-out">
+                {% trans "Tải lại" %}
+            </button>
+
+            <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="m-0">
+                <button type="submit"
+                        class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
+                               text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                               transform hover:scale-105 transition duration-300 ease-in-out">
+                    {% trans "Thêm thành viên" %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
     <script>
-        const ONNX_MODEL_PATH = "{% static 'model/model1/voice_model_from_spec.onnx' %}";
+        const ONNX_MODEL_PATH = "{% static 'model/model1/model1.onnx' %}";
         const ROOM_ID = "{{ room.id }}";
         const VERIFY_URL = "{% url 'action_room:verify_voice' %}";
         const TARGET_SR = 16000;
@@ -237,7 +273,12 @@
         const fpsDisplay = document.getElementById('fps-display');
         let frameCount = 0;
         let fpsInterval;
-        
+
+        const LANGUAGE_CODE = "{{ LANGUAGE_CODE }}";
+        function getMessage(msgVi, msgEn) {
+            return LANGUAGE_CODE === 'vi' ? msgVi : msgEn;
+        }
+
         
         async function resampleAudio(audioBuffer, targetSampleRate) {
             if (audioBuffer.sampleRate === targetSampleRate) {
@@ -321,12 +362,13 @@
         async function loadModel() {
             toggleBtn.disabled = true;
             try {
-                updateStatus("Đang tải model ONNX...", "loading");
+                updateStatus(gettext('Đang tải model ONNX...'), "loading");
                 ortSession = await ort.InferenceSession.create(ONNX_MODEL_PATH);
-                updateStatus("Model đã sẵn sàng. Nhấn 'Bắt đầu nghe' để chạy.", "info");
+                
+                updateStatus(gettext('Model đã sẵn sàng. Nhấn "Bắt đầu nghe" để chạy.'), "info");
                 toggleBtn.disabled = false;
             } catch (e) {
-                updateStatus(`Lỗi khi tải model: ${e.message}`, "error");
+                updateStatus(`${gettext('Lỗi khi tải model:')} ${e.message}`, "error");
             }
         }
         
@@ -340,11 +382,11 @@
 
         async function startListening() {
             if (!ortSession) {
-                updateStatus("Lỗi: Model chưa được tải.", "error");
+                updateStatus(gettext("Lỗi: Model chưa được tải."), "error");
                 return;
             }
             try {
-                updateStatus("Yêu cầu quyền truy cập micro...", "loading");
+                updateStatus(getMessage("Yêu cầu quyền truy cập micro...", "Requesting microphone access..."), "loading");
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -365,11 +407,14 @@
 
                 runInference();
 
-                toggleBtn.textContent = "Dừng nghe";
+                toggleBtn.textContent = getMessage("Dừng nghe", "Stopped listening");
+
                 toggleBtn.classList.add('is-listening');
-                updateStatus("Đang nghe...", "loading");
+                
+                updateStatus(getMessage("Đang nghe...", "Loading..."), "loading");
+
             } catch (e) {
-                updateStatus(`Lỗi micro: ${e.message}. Vui lòng cấp quyền truy cập.`, "error");
+                updateStatus(`${gettext('Lỗi micro:')} ${e.message}. ${gettext('Vui lòng cấp quyền truy cập.')}`, "error");
             }
         }
 
@@ -401,15 +446,17 @@
                 }
 
                 audioBuffer = new Float32Array(0);
-                toggleBtn.textContent = "Bắt đầu nghe";
+                
+                toggleBtn.textContent = gettext("Bắt đầu nghe");
                 toggleBtn.classList.remove('is-listening');
                 
                 toggleBtn.disabled = false; 
                 
-                updateStatus("Đã dừng. Nhấn 'Bắt đầu' để nghe lại.", "info");
+                updateStatus(getMessage("Đã dừng. Nhấn 'Bắt đầu' để nghe lại.", "Stopped. Click 'Start Listening' to listen again."), "info");
+
             } catch (e) {
-                console.error("Lỗi khi dừng:", e);
-                updateStatus("Đã dừng.", "info");
+                console.error(gettext("Lỗi khi dừng:"), e);
+                updateStatus(gettext("Đã dừng."), "info");
             }
         }
 
@@ -430,7 +477,7 @@
             if (!isListening) return;
 
             if (!audioContext || audioContext.state === 'closed') {
-                console.warn("AudioContext đã đóng, dừng vòng lặp.");
+                console.warn(gettext("AudioContext đã đóng, dừng vòng lặp."));
                 stopListening();
                 return;
             }
@@ -438,7 +485,7 @@
             const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
             
             if (audioBuffer.length < requiredNativeSamples) {
-                updateStatus("Đang nghe...", "loading");
+                updateStatus(getMessage("Đang nghe...", "Loading..."), "loading");
                 if (isListening) {
                     setTimeout(runInference, 100); 
                 }
@@ -451,7 +498,8 @@
 
             const audioChunk = audioBuffer.slice(audioBuffer.length - requiredNativeSamples);
             toggleBtn.disabled = true;
-            updateStatus("Đang phân tích...", "loading");
+            updateStatus(getMessage("Đang phân tích...", "Analyzing..."), "loading");
+
 
             try {
                 if (!isListening || !audioContext || audioContext.state === 'closed') {
@@ -478,8 +526,8 @@
                 
                 if (prediction === "True" && probability > THRESHOLD) {
                     updateStatus(
-                        `<strong>Phát hiện từ khóa!</strong> (Xác suất: ${(probability * 100).toFixed(2)}%)<br>
-                        🔄 Đang gửi tới Model2 (xác thực người nói)...`,
+                        `<strong>${gettext('Phát hiện từ khóa!')}</strong> (${gettext('Xác suất')}: ${(probability * 100).toFixed(2)}%)<br>
+                         🔄 ${gettext('Đang gửi tới Model2 (xác thực người nói)...')}`,
                         "loading"
                     );
                     
@@ -498,7 +546,7 @@
                         
                         const data = await response.json();
                         if (data.error) {
-                            updateStatus(`❌ Lỗi: ${data.error}`, "error");
+                            updateStatus(`❌ ${gettext('Lỗi:')} ${data.error}`, "error");
                         } else {
                             let tableHtml = `
                                 <div class="overflow-x-auto">
@@ -506,18 +554,18 @@
                                     <thead>
                                         <tr class="bg-blue-100 border-b border-blue-200">
                                             
-                                            <th class="py-2 px-3 border-r border-blue-200 text-black">Tên Thành Viên</th>
+                                            <th class="py-2 px-3 border-r border-blue-200 text-black">${gettext('Tên Thành Viên')}</th>
                                             
-                                            <th class="py-2 px-3 border-r border-blue-200 text-center text-black">Độ Tương Đồng</th>
+                                            <th class="py-2 px-3 border-r border-blue-200 text-center text-black">${gettext('Độ Tương Đồng')}</th>
                                             
-                                            <th class="py-2 px-3 text-center text-black">Kết quả</th>
+                                            <th class="py-2 px-3 text-center text-black">${gettext('Kết quả')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         ${data.results.map(r => `
                                             <tr class="border-b border-blue-200 hover:bg-blue-50">
                                                 
-                                                <td class="py-2 px-3 font-medium text-black">${r.name}${r.is_owner ? " (Chủ hộ)" : ""}</td>
+                                                <td class="py-2 px-3 font-medium text-black">${r.name}${r.is_owner ? ` ${gettext('(Chủ hộ)')}` : ""}</td>
                                                 
                                                 <td class="py-2 px-3 text-center text-black">${r.similarity.toFixed(4)}</td>
                                                 <td class="py-2 px-3 text-center">
@@ -527,8 +575,8 @@
                                         `).join("")}
                                     </tbody>
                                 </table>
-                            </div>
-                        `;
+                                </div>
+                            `;
                             updateStatus(tableHtml, "success");
 
                             if (data.matched_member && data.functions && data.functions.length > 0) {
@@ -553,7 +601,7 @@
                                     featuresBox.innerHTML = `
                                         <div class="mt-6 bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
                                             <h3 class="text-xl font-bold mb-5 text-black-700 text-center">
-                                                Quyền truy cập vào các thiết bị của ${data.matched_member}
+                                                ${gettext('Quyền truy cập vào các thiết bị của')} ${data.matched_member}
                                             </h3>
                                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center place-items-center">
                                                 ${deviceCards}
@@ -562,28 +610,25 @@
                                     `;
                                 }, 200);
                             } else {
-                                featuresBox.innerHTML = `<p class="text-gray-500 mt-4 italic">Không có thiết bị nào được phân quyền.</p>`;
+                                featuresBox.innerHTML = `<p class="text-gray-500 mt-4 italic">${gettext('Không có thiết bị nào được phân quyền.')}</p>`;
                             }
 
                             
                             toggleBtn.disabled = false;
-                            toggleBtn.textContent = "🎙️ Bắt đầu nghe";
+                            toggleBtn.textContent = `${gettext('Bắt đầu nghe')}`;
                             toggleBtn.classList.remove('is-listening');
                         }
 
                     } catch (err) {
-                        console.error("Lỗi khi gửi giọng nói:", err);
-                        updateStatus(`🔥 Lỗi khi xác thực giọng nói: ${err.message}`, "error");
+                        console.error(gettext("Lỗi khi gửi giọng nói:"), err);
+                        updateStatus(`🔥 ${gettext('Lỗi khi xác thực giọng nói:')} ${err.message}`, "error");
                         toggleBtn.disabled = false;
-                        toggleBtn.textContent = "🎙️ Bắt đầu nghe";
+                        toggleBtn.textContent = `${gettext('Bắt đầu nghe')}`;
                         toggleBtn.classList.remove('is-listening');
                     }
 
                 } else {
-                    updateStatus(
-                        `Đang nghe...)`,
-                        "loading"
-                    );
+                    updateStatus(getMessage("Đang nghe...", "Loading..."), "loading");
                     toggleBtn.disabled = false;
                     
                     if (isListening) {
@@ -592,10 +637,10 @@
                 }
 
             } catch (e) {
-                console.error("Lỗi trong vòng lặp dự đoán:", e.message);
+                console.error(gettext("Lỗi trong vòng lặp dự đoán:"), e.message);
                 
                 if (isListening) {
-                    updateStatus(`Lỗi dự đoán: ${e.message}. Đang thử lại...`, "error");
+                    updateStatus(`${gettext('Lỗi dự đoán:')} ${e.message}. ${gettext('Đang thử lại...')}`, "error");
                     toggleBtn.disabled = false;
                     setTimeout(runInference, 0);
                 } else {
