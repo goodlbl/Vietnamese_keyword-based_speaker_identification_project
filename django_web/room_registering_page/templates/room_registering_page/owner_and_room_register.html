@@ -201,7 +201,7 @@
         font-style: italic;
     }
 </style>
-{% endblock %}
+{% endblock %} 
 
 
 {% block content %}
@@ -258,6 +258,8 @@
                         margin: 0px auto;">
                 {% trans "Nhập mã căn hộ và mật khẩu muốn đăng ký" %}
             </div>
+            <div id="formMessage" style="color: red; font-weight: bold;"></div>
+
             <div class="room-inputs">
                 <input 
                     id="room_number"
@@ -267,7 +269,6 @@
                     maxlength="10"
                     autocomplete="off"
                 />
-                <div id="formMessage" style="color: red; font-weight: bold;"></div>
                 <br>
                 <input type="password" name="password" placeholder="{% trans 'Nhập mật khẩu' %}">
             </div>

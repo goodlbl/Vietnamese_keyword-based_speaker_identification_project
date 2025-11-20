@@ -18,7 +18,7 @@ def register_view(request):
     return render(request, 'member_registering_page/index.html')
 
 def submit_all(request):
-    if request.method == 'POST':
+    if request.method == 'POST': 
         room_id = request.session.get('room_id')
         if not room_id:
             return JsonResponse({'success': False, 'error': 'No room_id in session'}, status=400)
@@ -35,6 +35,19 @@ def submit_all(request):
             room=room_id,
             buttons=buttons
         )
+        
+        missing_audio = False
+        for i in range(1, 4):
+            if not request.FILES.get(f'audio{i}'):
+                missing_audio = True
+                break
+        
+        if missing_audio:
+            return JsonResponse({
+                'success': False,
+                'message': _('Vui lòng thu đủ file audio')
+            })
+        
 
         if GLOBAL_MODEL is None or extract_embedding is None:
             print("🔥 LỖI: Model chưa được tải. Không thể xử lý audio.")

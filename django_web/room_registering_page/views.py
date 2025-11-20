@@ -7,6 +7,7 @@ import os, tempfile
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.contrib import messages
 
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
@@ -30,6 +31,18 @@ def create_owner_and_room(request):
         buttons = [1, 1, 1, 1, 1, 1]
         record = MemberRecord.objects.create(name=name, buttons=buttons, is_owner=True)
 
+        missing_audio = False
+        for i in range(1, 4):
+            if not request.FILES.get(f'audio{i}'):
+                missing_audio = True
+                break
+        
+        if missing_audio:
+            return JsonResponse({
+                'success': False,
+                'message': _('Vui lòng thu đủ file audio')
+            })
+        
         if GLOBAL_MODEL and extract_embedding:
             embeddings_to_save = {}
             for i in range(1, 4):

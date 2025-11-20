@@ -249,13 +249,13 @@
 
 
     <script>
-        const ONNX_MODEL_PATH = "{% static 'model/model1/model1.onnx' %}";
+        const ONNX_MODEL_PATH = "{% static 'model/model1/model_CNN_BiLSTM.onnx' %}";
         const ROOM_ID = "{{ room.id }}";
         const VERIFY_URL = "{% url 'action_room:verify_voice' %}";
         const TARGET_SR = 16000;
         const TARGET_LENGTH = 40000;
-        const N_FFT = 400;
-        const HOP_LENGTH = 512;
+        const N_FFT = 1000;
+        const HOP_LENGTH = 400;
         const THRESHOLD = 0.5;
         const INFERENCE_INTERVAL_MS = 750;
 
@@ -331,6 +331,7 @@
             const results = await ortSession.run(inputs);
             const logit = results.logits.data[0];
             const probability = 1 / (1 + Math.exp(-logit));
+            console.log(probability);
             const prediction = probability > THRESHOLD ? "True" : "False";
             spectrogramTensor.dispose();
             return [prediction, probability];
