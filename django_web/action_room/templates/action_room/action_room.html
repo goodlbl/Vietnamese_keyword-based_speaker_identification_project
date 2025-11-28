@@ -216,7 +216,11 @@
 
         <div class="status-container">
             <div id="status" class="status-box hidden"></div>
-            <div id="fps-display" class="fps-display"></div> 
+            <div class="flex justify-center items-center mt-2 h-8">
+                <div id="fps-display" class="text-gray-600 font-bold text-lg transition-all duration-300"></div> 
+                
+                <div id="latency-display" class="text-blue-600 font-bold text-lg hidden transition-all duration-300"></div>
+            </div>
             <div id="features-box" class="features-box"></div>
         </div>
 
@@ -387,6 +391,11 @@
                 return;
             }
             try {
+                const fpsDiv = document.getElementById('fps-display');
+                const latDiv = document.getElementById('latency-display');
+                if (fpsDiv) fpsDiv.classList.remove('hidden');
+                if (latDiv) latDiv.classList.add('hidden');
+
                 updateStatus(getMessage("Yêu cầu quyền truy cập micro...", "Requesting microphone access..."), "loading");
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -497,6 +506,7 @@
                 return;
             }
 
+            const startTime = performance.now();
             const audioChunk = audioBuffer.slice(audioBuffer.length - requiredNativeSamples);
             toggleBtn.disabled = true;
             updateStatus(getMessage("Đang phân tích...", "Analyzing..."), "loading");
@@ -526,6 +536,7 @@
                 frameCount++;
                 
                 if (prediction === "True" && probability > THRESHOLD) {
+                    const localTime = (performance.now() - startTime).toFixed(0);
                     updateStatus(
                         `<strong>${gettext('Phát hiện từ khóa!')}</strong> (${gettext('Xác suất')}: ${(probability * 100).toFixed(2)}%)<br>
                          🔄 ${gettext('Đang gửi tới Model2 (xác thực người nói)...')}`,
@@ -546,6 +557,23 @@
                         });
                         
                         const data = await response.json();
+                        const endTime = performance.now(); 
+                        const totalTime = (endTime - startTime).toFixed(0); 
+
+                        const fpsDiv = document.getElementById('fps-display');
+                        if (fpsDiv) fpsDiv.classList.add('hidden');
+
+                        const latDiv = document.getElementById('latency-display');
+                        if(latDiv) {
+                            latDiv.innerHTML = `⏱ ${totalTime} ms`;
+                            latDiv.classList.remove('hidden'); // Bỏ class hidden để hiện ra
+                        }
+
+                        const latencyDiv = document.getElementById('latency-display');
+                        if(latencyDiv) {
+                            latencyDiv.innerHTML = `⏱ ${totalTime} ms`; 
+                        }
+
                         if (data.error) {
                             updateStatus(`❌ ${gettext('Lỗi:')} ${data.error}`, "error");
                         } else {
@@ -631,7 +659,10 @@
                 } else {
                     updateStatus(getMessage("Đang nghe...", "Loading..."), "loading");
                     toggleBtn.disabled = false;
-                    
+
+                    const latencyDiv = document.getElementById('latency-display');
+                    if(latencyDiv) latencyDiv.innerText = "";
+
                     if (isListening) {
                         setTimeout(runInference, 0);
                     }
