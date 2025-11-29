@@ -4,6 +4,7 @@ from .models import MemberRecord
 from room_registering_page.models import Room
 import json, io, numpy as np
 import os, tempfile
+import uuid
 
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
@@ -66,10 +67,23 @@ def submit_all(request):
                     for chunk in audio_file.chunks():
                         tmp_file.write(chunk)
                     tmp_file_path = tmp_file.name
-                
+                converted_path = tmp_file_path.replace(
+                ".wav",
+                f"_{uuid.uuid4().hex}_converted.wav"
+            )
+
+                import ffmpeg
+                (
+                    ffmpeg
+                    .input(tmp_file_path)
+                    .output(converted_path, acodec='pcm_s16le', ar='16000', ac=1)
+                    .overwrite_output()
+                    .run()
+                )
+
                 print(f"Đang trích xuất embedding cho {name} - audio{i}...")
-                emb_array = extract_embedding(GLOBAL_MODEL, tmp_file_path)
-                
+                emb_array = extract_embedding(GLOBAL_MODEL, converted_path)
+
                 embeddings_to_save[f"audio{i}"] = np.array(emb_array, dtype=np.float32).tobytes()
                 print(f"✅ Trích xuất audio{i} thành công.")
 
