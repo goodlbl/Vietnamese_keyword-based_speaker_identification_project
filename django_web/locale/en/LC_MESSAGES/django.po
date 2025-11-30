@@ -1,0 +1,193 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-17 16:44+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\action_room\templates\action_room\action_room.html:5
+msgid "Vào căn hộ"
+msgstr "Enter Home"
+
+#: .\action_room\templates\action_room\action_room.html:194
+msgid "Căn hộ số:"
+msgstr "Home number:"
+
+#: .\action_room\templates\action_room\action_room.html:198
+msgid "Chủ hộ:"
+msgstr "Owner:"
+
+#: .\action_room\templates\action_room\action_room.html:202
+msgid "Trợ Lý Ảo Căn Hộ"
+msgstr "Virtual Home Assistant"
+
+#: .\action_room\templates\action_room\action_room.html:206
+msgid ""
+"Nói từ khóa \"QUAD TEAM ƠI\" để kích hoạt và xác nhận quyền điều khiển căn "
+"hộ."
+msgstr ""
+"Say the keyword \"QUAD TEAM ƠI\" to activate and confirm control of the home."
+
+#: .\action_room\templates\action_room\action_room.html:213
+msgid "Bắt đầu nghe"
+msgstr "Start Listening"
+
+#: .\action_room\templates\action_room\action_room.html:228
+msgid "Rời khỏi căn hộ"
+msgstr "Exit Home"
+
+#: .\action_room\templates\action_room\action_room.html:235
+msgid "Tải lại"
+msgstr "Reload"
+
+#: .\action_room\templates\action_room\action_room.html:243
+msgid "Thêm thành viên"
+msgstr "Add Member"
+
+#: .\action_room\views.py:20
+#: .\member_registering_page\templates\member_registering_page\index.html:209
+msgid "Bếp"
+msgstr "Kitchen"
+
+#: .\action_room\views.py:21
+#: .\member_registering_page\templates\member_registering_page\index.html:210
+msgid "Ti vi"
+msgstr "TV"
+
+#: .\action_room\views.py:22
+#: .\member_registering_page\templates\member_registering_page\index.html:211
+msgid "Máy lạnh"
+msgstr "Air Conditioner"
+
+#: .\action_room\views.py:23
+#: .\member_registering_page\templates\member_registering_page\index.html:212
+msgid "Quạt"
+msgstr "Fan"
+
+#: .\action_room\views.py:24
+#: .\member_registering_page\templates\member_registering_page\index.html:213
+msgid "Cửa"
+msgstr "Door"
+
+#: .\action_room\views.py:25
+#: .\member_registering_page\templates\member_registering_page\index.html:214
+msgid "Đèn"
+msgstr "Light"
+
+#: .\check_password\forms.py:6
+msgid "Nhập mật khẩu căn hộ"
+msgstr "Enter home password"
+
+#: .\check_password\templates\check_password\check_password.html:6
+#: .\check_password\templates\check_password\check_password.html:108
+msgid "Kiểm tra mật khẩu"
+msgstr "Check Password"
+
+#: .\check_password\templates\check_password\check_password.html:118
+#: .\main_page\templates\main_page\home.html:74
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:275
+msgid "Xác nhận"
+msgstr "Confirm"
+
+#: .\check_password\templates\check_password\check_password.html:120
+#: .\member_registering_page\templates\member_registering_page\index.html:221
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:276
+msgid "Quay lại"
+msgstr "Go Back"
+
+#: .\main_page\templates\main_page\home.html:5
+msgid "Trang chủ"
+msgstr "Home"
+
+
+#: .\main_page\templates\main_page\home.html:68
+msgid "Nhập mã căn hộ"
+msgstr "Enter home code"
+
+
+#: .\main_page\templates\main_page\home.html:84
+msgid "Đăng ký căn hộ mới"
+msgstr "Register new home"
+
+
+#: .\main_page\views.py:19
+msgid "Căn hộ mã {room_number} chưa được tạo."
+msgstr "The home with code {room_number} has not been created."
+
+#: .\member_registering_page\templates\member_registering_page\index.html:5
+#: .\member_registering_page\templates\member_registering_page\index.html:172
+msgid "Đăng ký thành viên"
+msgstr "Member Registration"
+
+#: .\member_registering_page\templates\member_registering_page\index.html:175
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:215
+msgid "Nhập tên của bạn..."
+msgstr "Enter your name..."
+
+#: .\member_registering_page\templates\member_registering_page\index.html:187
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:226
+msgid "Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền"
+msgstr "Please read the following phrases to complete the registration"
+
+#: .\member_registering_page\templates\member_registering_page\index.html:192
+#: .\member_registering_page\templates\member_registering_page\index.html:197
+#: .\member_registering_page\templates\member_registering_page\index.html:202
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:232
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:238
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:244
+msgid "Bắt đầu thu"
+msgstr "Start Recording"
+
+#: .\member_registering_page\templates\member_registering_page\index.html:217
+msgid "Đăng ký"
+msgstr "Register"
+
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:5
+#, fuzzy
+#| msgid "Đăng ký chủ hộ"
+msgid "Đăng ký căn hộ"
+msgstr "Home Owner Registration"
+
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:212
+msgid "Đăng ký chủ hộ"
+msgstr "Home Owner Registration"
+
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:259
+msgid "Nhập mã căn hộ và mật khẩu muốn đăng ký"
+msgstr "Enter the home code and password you want to register"
+
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:266
+msgid "Nhập mã căn hộ (tối đa 10 ký tự)"
+msgstr "Enter home code (up to 10 characters)"
+
+#: .\room_registering_page\templates\room_registering_page\owner_and_room_register.html:272
+msgid "Nhập mật khẩu"
+msgstr "Enter home password"
+
+#: .\room_registering_page\views.py:28
+#, python-format
+msgid "Số căn hộ %(room)s đã tồn tại."
+msgstr "The home number %(room)s already exists."
+
+#: .\templates\base.html:8
+msgid "Dự án của tôi"
+msgstr "My Project"
+
+#~ msgid "Đang tải model ONNX..."
+#~ msgstr "Loading ONNX model..."
+
+#~ msgid "Model đã sẵn sàng. Nhấn \\\"Bắt đầu nghe\\\" để chạy."
+#~ msgstr "Model is ready. Press \"Start Listening\" to run."

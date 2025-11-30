@@ -12,7 +12,7 @@ def check_password_view(request, room_id):
             password = form.cleaned_data['password']
             request.session['room_id'] = room.id
             if password == room.password:
-                return redirect('member_registering_page:register')  # Long đổi thành link member_register 
+                return redirect('member_registering_page:register') 
             else:
                 error = "Mật khẩu không đúng."
     else:

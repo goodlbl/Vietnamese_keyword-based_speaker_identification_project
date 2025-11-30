@@ -1,165 +1,305 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Quad Team - Register Owner & Room</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f2f2f2;
-        }
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
 
-        header {
-            background-color: #007BFF;
-            color: white;
-            font-size: 36px;
-            font-weight: bold;
-            text-align: center;
-            padding: 30px 0;
-        }
+{% block title %}{% trans "Đăng ký căn hộ" %}{% endblock %}
 
-        .form-section {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
+{% block extra_css %}
+    <script src="{% url 'javascript-catalog' %}"></script>
 
-        h2 {
-            text-align: center;
-            color: #007BFF;
-            margin-bottom: 1rem;
-        }
+<style>
+    body {
+        background-image: url("{% static 'images/background.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh; 
+        font-family: "Segoe UI", sans-serif; 
+    }
 
-        .name-input {
-            text-align: center;
-            margin: 20px 0;
-        }
+    header {
+        background-color: #007BFF;
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        text-align: center;
+        padding: 30px 0;
+    }
 
-        .name-input input {
-            width: 80%;
-            padding: 12px 15px;
-            font-size: 18px;
-            border: 2px solid #007BFF;
-            border-radius: 6px;
-            outline: none;
-        }
+    .container {
+        background: rgba(255, 255, 255, 0.85); 
+        width: 80%;
+        border: 4px solid #0f0636;       
+        padding: 40px 70px; 
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        text-align: center;
+        box-sizing: border-box; 
+        margin: 0 auto;
+    }
 
-        .audio-section {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px auto;
-            flex-wrap: wrap;
-        }
+    .page-header {
+        color: #150369;
+        font-size: 35px; 
+        font-weight: bold; 
+        text-align: center;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        margin-bottom: 25px;
+    }
 
-        .audio-box {
-            background-color: #ffffff;
-            border: 2px solid #007BFF;
-            border-radius: 12px;
-            padding: 20px;
-            width: 30%;
-            text-align: center;
-            margin: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+    .input-group {
+        width: 100%;
+        text-align: center;
+        margin: 15px 0;
+    }
 
-        .audio-box h3 {
-            margin-top: 0;
-            color: #007BFF;
-        }
+    .input-group input {
+        width: 60%; 
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 17px;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 15px; 
+        transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+        box-sizing: border-box; 
+    }
 
-        .audio-box button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-        }
+    .input-group input:focus {
+        border-color: #007BFF; 
+        box-shadow: 0 0 8px rgba(0,123,255,0.2);
+        outline: none;
+    }
 
-        .audio-box button.recording {
-            background-color: red;
-        }
+    .input-group input::placeholder {
+        color: #06014e;
+        font-style: italic;
+    }
 
-        .room-inputs {
-            margin-top: 30px;
-            text-align: center;
-        }
+    .instruction-highlight {
+        color: #0e0246; 
+        font-weight: bold; 
+        font-size: 23px;
+        text-align: center; 
+        border-radius: 10px;
+        max-width: 800px; 
+        margin: 20px auto;
+    }
 
-        .room-inputs input {
-            width: 60%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #007BFF;
-            border-radius: 6px;
-            font-size: 16px;
-        }
+    .audio-section {
+        display: flex;
+        justify-content: space-around;
+        margin: 20px auto;
+        width: 95%;
+    }
 
-        .corner-button {
-            position: fixed;
-            bottom: 20px;
-            padding: 15px 25px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-        }
+    .audio-box {
+        background-color: white;
+        border: 2px solid #007BFF;
+        border-radius: 12px;
+        padding: 20px;
+        width: 30%;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-        .bottom-right { right: 20px; background-color: #007BFF; }
-        .bottom-left { left: 20px; background-color: red; }
-    </style>
-</head>
-<body>
+    .audio-box h3 {
+        margin-top: 0;
+        color: #01254e;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+    }
 
-<header>Quad Team</header>
+    .audio-box button {
+        background-color: #327bcf;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-bottom: 10px;
+        transition: background 0.3s;
+    }
 
-<form id="ownerForm" method="POST" enctype="multipart/form-data" 
-      action="{% url 'room_registering_page:create_owner_and_room' %}">
-    {% csrf_token %}
+    .audio-box button.recording {
+        background-color: red;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
 
-    <div class="form-section">
-        <h2>Register Owner</h2>
+    .audio-box audio {
+        width: 100%;
+        margin-top: 5px;
+    }
 
-        <!-- Nhập tên -->
-        <div class="name-input">
-            <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
-        </div>
+    .corner-button {
+        position: fixed;
+        bottom: 20px;
+        padding: 15px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        z-index: 1000;
+        text-decoration: none;
+        display: inline-block;
+    }
 
-        <!-- 3 ô thu âm -->
-        <div class="audio-section">
-            {% for i in "123" %}
-            <div class="audio-box" id="rec{{ i }}">
-                <h3>Sample {{ i }}</h3>
-                <button type="button" onclick="toggleRecord({{ i }})">🎙️ Bắt đầu thu</button>
-                <audio controls id="player{{ i }}" style="display:none;"></audio>
-                <input type="file" id="audioInput{{ i }}" name="audio{{ i }}" style="display:none;">
+    .bottom-right { right: 20px; background-color: #007BFF; font-weight: bold; }
+    .bottom-left { left: 20px; background-color: #dc3545; font-weight: bold; }
+    
+    .corner-button:hover { opacity: 0.9; }
+    .corner-button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+        .container { width: 95%; padding: 30px 15px; }
+        .audio-section { flex-direction: column; align-items: center; }
+        .audio-box { width: 90%; margin-bottom: 20px; }
+        .input-group input { width: 90%; }
+    }
+</style>
+{% endblock %} 
+
+
+{% block content %}
+<div class="container">
+    <form id="ownerForm" method="POST" enctype="multipart/form-data" 
+        action="{% url 'room_registering_page:create_owner_and_room' %}">
+        {% csrf_token %}
+            
+            <h3 class="page-header">{% trans "Đăng ký chủ hộ" %}</h3>
+
+            <div class="input-group">
+                <input type="text" name="name" id="username" placeholder="{% trans 'Nhập tên của bạn...' %}" required>
             </div>
-            {% endfor %}
-        </div>
-    </div>
 
-    <div class="form-section">
-        <h2>Register Room</h2>
-        <div class="room-inputs">
-            <input type="text" name="room_number" placeholder="Nhập số phòng (10 chữ số)" maxlength="10" pattern="\d{10}">
-            <br>
-            <input type="password" name="password" placeholder="Nhập mật khẩu">
-        </div>
-    </div>
+            <div class="instruction-highlight">
+                {% trans "Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền" %}
+            </div>
 
-    <button type="submit" class="corner-button bottom-right">Enter</button>
-    <button type="button" class="corner-button bottom-left" onclick="goBack()">Quit</button>
-</form>
+            <div class="audio-section">
+                <div class="audio-box" id="rec1">
+                    <h3>“Quad team ơi”</h3>
+                    <button type="button" onclick="toggleRecord(1)">{% trans "Bắt đầu thu" %}</button>
+                    <audio controls id="player1" style="display:none;"></audio>
+                    <input type="file" id="audioInput1" name="audio1" style="display:none;" accept="audio/*">
+                </div>
+                <div class="audio-box" id="rec2">
+                    <h3>“Mở lên Quad team ơi”</h3>
+                    <button type="button" onclick="toggleRecord(2)">{% trans "Bắt đầu thu" %}</button>
+                    <audio controls id="player2" style="display:none;"></audio>
+                    <input type="file" id="audioInput2" name="audio2" style="display:none;" accept="audio/*">
+                </div>
+                <div class="audio-box" id="rec3">
+                    <h3>“Quad team ơi thế nào”</h3>
+                    <button type="button" onclick="toggleRecord(3)">{% trans "Bắt đầu thu" %}</button>
+                    <audio controls id="player3" style="display:none;"></audio>
+                    <input type="file" id="audioInput3" name="audio3" style="display:none;" accept="audio/*">
+                </div>
+            </div>
+
+            <div class="instruction-highlight">
+                {% trans "Nhập mã căn hộ và mật khẩu muốn đăng ký" %}
+            </div>
+
+            <div id="formMessage" style="color: red; font-weight: bold; margin-bottom: 10px; min-height: 24px;"></div>
+
+            <div class="input-group">
+                <input 
+                    id="room_number"
+                    type="text"
+                    name="room_number"
+                    placeholder="{% trans 'Nhập mã căn hộ (tối đa 10 ký tự)' %}"
+                    maxlength="10"
+                    autocomplete="off"
+                    required
+                />
+                <br>
+                <input type="password" name="password" placeholder="{% trans 'Nhập mật khẩu' %}" required>
+            </div>
+
+            <button type="submit" id="submitBtn" class="corner-button bottom-right">{% trans "Xác nhận" %}</button>
+            <a href="{% url 'main_page:home' %}" class="corner-button bottom-left">{% trans "Quay lại" %}</a>
+
+    </form>
+</div>
 
 <script>
 let recorders = {};
 let audioChunks = {};
 let streams = {};
+let audioBlobs = {}; 
+
+document.getElementById('room_number').addEventListener('input', function () {
+    if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+    }
+});
+
+// Submit form
+document.getElementById('ownerForm').addEventListener('submit', function(e){
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submitBtn');
+    const msgDiv = document.getElementById('formMessage');
+    const form = e.target;
+    
+    msgDiv.textContent = "";
+    msgDiv.style.color = "red";
+
+    const username = document.getElementById('username').value.trim();
+    const room = document.getElementById('room_number').value.trim();
+    
+    if(!username || !room) {
+        msgDiv.textContent = "{% trans 'Vui lòng điền đầy đủ thông tin.' %}";
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "{% trans 'Đang xử lý...' %}";
+
+    const formData = new FormData(form);
+
+    fetch("{% url 'room_registering_page:create_owner_and_room' %}", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success){
+            msgDiv.style.color = 'green';
+            msgDiv.textContent = data.message || "{% trans 'Đăng ký thành công!' %}";
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 1000);
+        } else {
+            msgDiv.style.color = 'red';
+            msgDiv.textContent = data.message || "{% trans 'Có lỗi xảy ra.' %}";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "{% trans 'Xác nhận' %}";
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        msgDiv.textContent = "{% trans 'Lỗi kết nối server.' %}";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "{% trans 'Xác nhận' %}";
+    });
+});
 
 async function toggleRecord(id) {
     const btn = document.querySelector(`#rec${id} button`);
@@ -174,38 +314,50 @@ async function toggleRecord(id) {
             audioChunks[id] = [];
 
             recorder.ondataavailable = e => audioChunks[id].push(e.data);
+            
             recorder.onstop = () => {
                 const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
+                
                 const file = new File([blob], `sample${id}.webm`, { type: 'audio/webm' });
-
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 input.files = dataTransfer.files;
+                // -----------------------------------------------------
 
+                audioBlobs[id] = blob;
                 const url = URL.createObjectURL(blob);
                 player.src = url;
                 player.style.display = 'block';
+                player.onplay = () => { 
+                    setTimeout(() => player.pause(), 2500); 
+                };
             };
 
             recorder.start();
             recorders[id] = recorder;
-            btn.textContent = "⏹ Dừng thu";
+            btn.textContent = gettext("Đang thu...");
             btn.classList.add("recording");
+
+            setTimeout(() => {
+                if (recorders[id]) {
+                    recorders[id].stop();
+                    streams[id].getTracks().forEach(track => track.stop());
+                    recorders[id] = null;
+                    btn.textContent = gettext("Bắt đầu thu"); 
+                    btn.classList.remove("recording");
+                }
+            }, 2500);
+
         } catch (err) {
-            alert("Không truy cập được micro: " + err.message);
+            alert("{% trans 'Không truy cập được micro: ' %}" + err.message);
         }
     } else {
         recorders[id].stop();
         streams[id].getTracks().forEach(track => track.stop());
         recorders[id] = null;
-        btn.textContent = "🎙️ Bắt đầu thu";
+        btn.textContent = gettext("Bắt đầu thu"); 
         btn.classList.remove("recording");
     }
 }
-
-function goBack() {
-    window.history.back();
-}
 </script>
-</body>
-</html>
+{% endblock %}
