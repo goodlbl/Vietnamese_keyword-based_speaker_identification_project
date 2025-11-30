@@ -2,16 +2,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .models import MemberRecord
 from room_registering_page.models import Room
-import json, requests, io, numpy as np
+import json, io, numpy as np
+import os, tempfile
+import uuid
 
-# URL Flask API model2
-MODEL2_API_URL = "http://127.0.0.1:5000/predict_embedding"
+try:
+    from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
+    print(f"✅ Tải model thành công trên {DEVICE} cho đăng ký người dùng views.")
+except ImportError:
+    print("❌ LỖI IMPORT: Không tìm thấy utils.py hoặc model.")
+    GLOBAL_MODEL = None
+    extract_embedding = None
+
 
 def register_view(request):
     return render(request, 'member_registering_page/index.html')
 
 def submit_all(request):
-    if request.method == 'POST':
+    if request.method == 'POST': 
         room_id = request.session.get('room_id')
         if not room_id:
             return JsonResponse({'success': False, 'error': 'No room_id in session'}, status=400)
@@ -23,52 +31,91 @@ def submit_all(request):
         buttons_json = request.POST.get('buttons')
         buttons = json.loads(buttons_json) if buttons_json else []
 
-        # 🟩 1️⃣ Tạo record ban đầu
         member = MemberRecord.objects.create(
             name=name,
             room=room_id,
             buttons=buttons
         )
-
-        # 🟩 2️⃣ Chuẩn bị 3 file audio gửi sang Flask
-        audio_files = []
+        
+        missing_audio = False
         for i in range(1, 4):
-            audio = request.FILES.get(f'audio{i}')
-            if audio:
-                audio_bytes = audio.read()
-                audio_files.append(('files', (audio.name, io.BytesIO(audio_bytes), audio.content_type)))
+            if not request.FILES.get(f'audio{i}'):
+                missing_audio = True
+                break
+        
+        if missing_audio:
+            return JsonResponse({
+                'success': False,
+                'message': _('Vui lòng thu đủ file audio')
+            })
+        
 
-        # 🟩 3️⃣ Gọi Flask API để trích embedding
-        try:
-            resp = requests.post(MODEL2_API_URL, files=audio_files, timeout=60)
-            data = resp.json()
+        if GLOBAL_MODEL is None or extract_embedding is None:
+            print("🔥 LỖI: Model chưa được tải. Không thể xử lý audio.")
+            return JsonResponse({'success': False, 'error': 'Model service is unavailable'}, status=500)
 
-            if "embeddings" in data:
-                emb_list = data["embeddings"]
+        embeddings_to_save = {}
+        
+        for i in range(1, 4):
+            audio_file = request.FILES.get(f'audio{i}')
+            if not audio_file:
+                continue 
 
-                # ✅ Lưu từng embedding (192-dim float32)
-                for i, emb_vec in enumerate(emb_list, start=1):
-                    emb_array = np.array(emb_vec, dtype=np.float32)
-                    setattr(member, f"audio{i}", emb_array.tobytes())
+            tmp_file_path = None
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
+                    for chunk in audio_file.chunks():
+                        tmp_file.write(chunk)
+                    tmp_file_path = tmp_file.name
+                converted_path = tmp_file_path.replace(
+                ".wav",
+                f"_{uuid.uuid4().hex}_converted.wav"
+            )
 
-                member.save(update_fields=["audio1", "audio2", "audio3"])
-                print(f"✅ 3 embeddings saved to DB for {name}")
-            else:
-                print("⚠️ Không nhận được embeddings từ Flask:", data)
+                import ffmpeg
+                (
+                    ffmpeg
+                    .input(tmp_file_path)
+                    .output(converted_path, acodec='pcm_s16le', ar='16000', ac=1)
+                    .overwrite_output()
+                    .run()
+                )
 
-        except Exception as e:
-            print(f"🔥 Lỗi khi gọi Flask API: {e}")
+                print(f"Đang trích xuất embedding cho {name} - audio{i}...")
+                emb_array = extract_embedding(GLOBAL_MODEL, converted_path)
+
+                embeddings_to_save[f"audio{i}"] = np.array(emb_array, dtype=np.float32).tobytes()
+                print(f"✅ Trích xuất audio{i} thành công.")
+
+            except Exception as e:
+                print(f"🔥 Lỗi khi trích xuất embedding cho audio{i}: {e}")
+            
+            finally:
+                if tmp_file_path and os.path.exists(tmp_file_path):
+                    os.remove(tmp_file_path)
+
+        if embeddings_to_save:
+            update_fields = []
+            for field, data in embeddings_to_save.items():
+                setattr(member, field, data)
+                update_fields.append(field)
+            
+            member.save(update_fields=update_fields)
+            print(f"✅ Đã lưu {len(update_fields)} embeddings vào DB cho {name}")
+        else:
+            print(f"⚠️ Không có file audio nào được xử lý cho {name}.")
 
         redirect_url = f"/action_room/{room_id}/"
         return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
+
 def back_to_password(request):
     room_id = request.session.get("room_id")
     room = get_object_or_404(Room, id=room_id)
 
     if room_id:
-        return render(request, 'main_page/room_detail.html', {'room': room})
+        return render(request, 'action_room/action_room.html', {'room': room})
     else:
         return redirect("/")
