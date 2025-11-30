@@ -15,7 +15,7 @@
         background-repeat: no-repeat;
         background-attachment: fixed;
 
-        height: auto;   
+        height: auto;  
         min-height: 100vh; 
 
         font-family: "Segoe UI", sans-serif; 
@@ -28,19 +28,6 @@
         font-weight: bold;
         text-align: center;
         padding: 30px 0;
-    }
-
-    .name-input {
-        text-align: center;
-        margin: 30px 0;
-    }
-    .name-input input {
-        width: 60%;
-        padding: 12px 15px;
-        font-size: 18px;
-        border: 2px solid #007BFF;
-        border-radius: 6px;
-        outline: none;
     }
 
     .instruction {
@@ -128,114 +115,185 @@
     }
 
     .bottom-right { right: 20px; background-color: #007BFF; font-weight: bold; }
-    .bottom-left { left: 20px; background-color: red; font-weight: bold; }
+    .bottom-left { left: 20px; background-color: red; font-weight: bold; text-decoration: none;}
+    
     .container {
-    background: rgba(255, 255, 255, 0.85); 
-    
-    width: 80%;
-    
-    border: 4px solid #0f0636;       
-    padding: 40px 70px; 
-    border-radius: 20px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    text-align: center;
-    
-    box-sizing: border-box; 
-}
-
-@media (max-width: 768px) {
-    .container {
-        width: 90%;
-        padding: 40px 20px; 
+        background: rgba(255, 255, 255, 0.85); 
+        width: 80%;
+        border: 4px solid #0f0636;       
+        padding: 40px 70px; 
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        text-align: center;
+        box-sizing: border-box; 
     }
-}
-.audio-box > * {
-    margin-bottom: 12px;
-}
-.page-header {
+
+    @media (max-width: 768px) {
+        .container {
+            width: 90%;
+            padding: 40px 20px; 
+        }
+    }
+    .audio-box > * {
+        margin-bottom: 12px;
+    }
+    .page-header {
         color: #150369;
-        font-size: 32px; 
+        font-size: 35px; 
         font-weight: bold; 
         text-align: center;
-        padding: 25px 0;
-        
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-        margin-bottom: 20px;
+    }
+
+    .name-input {
+        width: 100%;
+        margin: 20px auto 0; 
+        text-align: center; 
+        padding: 25px 30px; 
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .name-input input {
+        width: 80%; 
+        box-sizing: border-box; 
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 17px;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+    }
+    .name-input input::placeholder {
+        color: #06014e;
+        font-style: italic;
     }
 </style>
 {% endblock %}
 
 
 {% block content %}
-
 <div class="container">
-    <h3 class="page-header">{% trans "Đăng ký thành viên" %}</h3>
-
-    <div class="name-input">
-        <input type="text" id="username" placeholder="{% trans 'Nhập tên của bạn...' %}">
-    </div>
-
-
-    <div class="instruction" 
-     style="color: #0e0246; 
-            font-weight: bold; 
-            text-align: center; 
-            padding: 10px 15px; 
-            border-radius: 10px;
-            max-width: 700px; 
-            margin: 20px auto;">
-    {% trans "Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền" %}
-</div>
-    <div class="audio-section">
-        <div class="audio-box" id="rec1">
-            <h3>“Quad team ơi”</h3>
-            <button onclick="toggleRecord(1)">{% trans "Bắt đầu thu" %}</button>
-            <audio controls id="player1" style="display:none;"></audio>
-        </div>
-        <div class="audio-box" id="rec2">
-            <h3>“Mở lên Quad team ơi”</h3>
-            <button onclick="toggleRecord(2)">{% trans "Bắt đầu thu" %}</button>
-            <audio controls id="player2" style="display:none;"></audio>
-        </div>
-        <div class="audio-box" id="rec3">
-            <h3>“Quad team ơi thế nào”</h3>
-            <button onclick="toggleRecord(3)">{% trans "Bắt đầu thu" %}</button>
-            <audio controls id="player3" style="display:none;"></audio>
-        </div>
-    </div>
-    <div class="spacer"></div>
-
-    <div class="button-grid">
-        <button class="btn1 off" onclick="toggleBtn(1)">{% trans "Bếp" %}</button>
-        <button class="btn2 off" onclick="toggleBtn(2)">{% trans "Ti vi" %}</button>
-        <button class="btn3 off" onclick="toggleBtn(3)">{% trans "Máy lạnh" %}</button>
-        <button class="btn4 off" onclick="toggleBtn(4)">{% trans "Quạt" %}</button>
-        <button class="btn5 off" onclick="toggleBtn(5)">{% trans "Cửa" %}</button>
-        <button class="btn6 off" onclick="toggleBtn(6)">{% trans "Đèn" %}</button>
-    </div>
-
-    <button class="corner-button bottom-right" onclick="sendAll()">{% trans "Đăng ký" %}</button>
-
-    <form method="POST" action="/member_registering_page/go_back/" style="display:inline;">
+    <form id="memberForm" method="POST" enctype="multipart/form-data" 
+        action="{% url 'member_registering_page:submit_all' %}">
         {% csrf_token %}
-        <button type="submit" class="corner-button bottom-left">{% trans "Quay lại" %}</button>
+        
+        <h3 class="page-header">{% trans "Đăng ký thành viên" %}</h3>
+
+        <div class="name-input">
+            <input type="text" name="name" id="username" placeholder="{% trans 'Nhập tên của bạn...' %}" required>
+        </div>
+
+        <div class="instruction" 
+            style="color: #0e0246; 
+                    font-weight: bold; 
+                    font-size: 23px;
+                    text-align: center; 
+                    border-radius: 10px;
+                    max-width: 700px; 
+                    margin: 0px auto;">
+            {% trans "Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền" %}
+        </div>
+
+        <div class="audio-section">
+            <div class="audio-box" id="rec1">
+                <h3>“Quad team ơi”</h3>
+                <button type="button" onclick="toggleRecord(1)">{% trans "Bắt đầu thu" %}</button>
+                <audio controls id="player1" style="display:none;"></audio>
+                <input type="file" id="audioInput1" name="audio1" style="display:none;">
+            </div>
+            <div class="audio-box" id="rec2">
+                <h3>“Mở lên Quad team ơi”</h3>
+                <button type="button" onclick="toggleRecord(2)">{% trans "Bắt đầu thu" %}</button>
+                <audio controls id="player2" style="display:none;"></audio>
+                <input type="file" id="audioInput2" name="audio2" style="display:none;">
+            </div>
+            <div class="audio-box" id="rec3">
+                <h3>“Quad team ơi thế nào”</h3>
+                <button type="button" onclick="toggleRecord(3)">{% trans "Bắt đầu thu" %}</button>
+                <audio controls id="player3" style="display:none;"></audio>
+                <input type="file" id="audioInput3" name="audio3" style="display:none;">
+            </div>
+        </div>
+
+        <div class="instruction" 
+            style="color: #0e0246; 
+                    font-weight: bold; 
+                    font-size: 23px;
+                    text-align: center; 
+                    border-radius: 10px;
+                    max-width: 800px; 
+                    margin: 20px auto;">
+            {% trans "Chọn các thiết bị được phép điều khiển" %}
+        </div>
+
+        <div class="button-grid">
+            <button type="button" class="btn1 off" onclick="toggleBtn(1)">{% trans "Bếp" %}</button>
+            <button type="button" class="btn2 off" onclick="toggleBtn(2)">{% trans "Ti vi" %}</button>
+            <button type="button" class="btn3 off" onclick="toggleBtn(3)">{% trans "Máy lạnh" %}</button>
+            <button type="button" class="btn4 off" onclick="toggleBtn(4)">{% trans "Quạt" %}</button>
+            <button type="button" class="btn5 off" onclick="toggleBtn(5)">{% trans "Cửa" %}</button>
+            <button type="button" class="btn6 off" onclick="toggleBtn(6)">{% trans "Đèn" %}</button>
+        </div>
+
+        <input type="hidden" name="buttons" id="buttonsInput" value="[0,0,0,0,0,0]">
+
+        <div id="formMessage" style="color: red; font-weight: bold; margin-top: 20px;"></div>
+
+        <button type="submit" class="corner-button bottom-right">{% trans "Đăng ký" %}</button>
+        <a href="{% url 'member_registering_page:go_back' %}" class="corner-button bottom-left">{% trans "Quay lại" %}</a>
+
     </form>
 </div>
 
 <script>
-const csrftoken = '{{ csrf_token }}';
-const SUBMIT_URL = "{% url 'member_registering_page:submit_all' %}";
-const GO_BACK_URL = "{% url 'member_registering_page:go_back' %}";
-
 let recorders = {};
 let audioChunks = {};
 let streams = {};
-let audioBlobs = {};  
-let buttonStates = [0,0,0,0,0,0];  
+let audioBlobs = {}; 
+let buttonStates = [0,0,0,0,0,0];
+
+document.getElementById('memberForm').addEventListener('submit', function(e){
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const name = document.getElementById("username").value.trim();
+    if (!name) {
+        document.getElementById('formMessage').textContent = "Vui lòng nhập tên.";
+        return;
+    }
+
+    fetch("{% url 'member_registering_page:submit_all' %}", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const msgDiv = document.getElementById('formMessage');
+        if(data.success){
+            msgDiv.style.color = 'green';
+            msgDiv.textContent = data.message || "Đăng ký thành công!";
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            }
+        } else {
+            msgDiv.style.color = 'red';
+            msgDiv.textContent = data.error || data.message || "Có lỗi xảy ra.";
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('formMessage').textContent = "Lỗi kết nối.";
+    });
+});
 
 async function toggleRecord(id) {
     const btn = document.querySelector(`#rec${id} button`);
     const player = document.querySelector(`#player${id}`);
+    const input = document.querySelector(`#audioInput${id}`);
 
     if (!recorders[id]) {
         try {
@@ -245,8 +303,15 @@ async function toggleRecord(id) {
             audioChunks[id] = [];
 
             recorder.ondataavailable = e => audioChunks[id].push(e.data);
+            
             recorder.onstop = () => {
                 const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
+                
+                const file = new File([blob], `sample${id}.webm`, { type: 'audio/webm' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+
                 audioBlobs[id] = blob;
                 const url = URL.createObjectURL(blob);
                 player.src = url;
@@ -285,36 +350,11 @@ async function toggleRecord(id) {
 
 function toggleBtn(i) {
     const btn = document.querySelector(`.btn${i}`);
-    buttonStates[i-1] = 1 - buttonStates[i-1];
+    buttonStates[i-1] = 1 - buttonStates[i-1]; 
     btn.classList.toggle("off");
+    
+    document.getElementById('buttonsInput').value = JSON.stringify(buttonStates);
 }
 
-async function sendAll() {
-    const name = document.getElementById("username").value.trim();
-    if (!name) return alert("Hãy nhập tên trước khi gửi.");
-
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("buttons", JSON.stringify(buttonStates));
-
-    for (let i = 1; i <= 3; i++) {
-        if (audioBlobs[i]) formData.append(`audio${i}`, audioBlobs[i], `sample${i}.webm`);
-    }
-
-    const resp = await fetch(SUBMIT_URL, {
-        method: "POST",
-        body: formData,
-        headers: { "X-CSRFToken": csrftoken }
-    });
-
-    const data = await resp.json();
-
-    if (data.success) {
-        window.location.href = data.redirect_url; 
-    } else {
-        alert("❌ Gửi thất bại: " + (data.error || "Lỗi không xác định"));
-    }
-}
 </script>
-
 {% endblock %}

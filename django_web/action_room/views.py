@@ -95,7 +95,7 @@ def verify_voice(request):
     best_result = max(results, key=lambda x: x["similarity"]) if results else None
 
     if best_result and best_result["is_match"]:
-        matched_member = members.get(name=best_result["name"])
+        matched_member = members.filter(name=best_result["name"]).first()
 
         try:
             raw_buttons = matched_member.buttons

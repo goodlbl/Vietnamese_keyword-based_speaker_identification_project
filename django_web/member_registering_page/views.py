@@ -4,6 +4,7 @@ from .models import MemberRecord
 from room_registering_page.models import Room
 import json, io, numpy as np
 import os, tempfile
+import uuid
 
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
@@ -18,7 +19,7 @@ def register_view(request):
     return render(request, 'member_registering_page/index.html')
 
 def submit_all(request):
-    if request.method == 'POST':
+    if request.method == 'POST': 
         room_id = request.session.get('room_id')
         if not room_id:
             return JsonResponse({'success': False, 'error': 'No room_id in session'}, status=400)
@@ -35,6 +36,19 @@ def submit_all(request):
             room=room_id,
             buttons=buttons
         )
+        
+        missing_audio = False
+        for i in range(1, 4):
+            if not request.FILES.get(f'audio{i}'):
+                missing_audio = True
+                break
+        
+        if missing_audio:
+            return JsonResponse({
+                'success': False,
+                'message': _('Vui lòng thu đủ file audio')
+            })
+        
 
         if GLOBAL_MODEL is None or extract_embedding is None:
             print("🔥 LỖI: Model chưa được tải. Không thể xử lý audio.")
@@ -53,10 +67,23 @@ def submit_all(request):
                     for chunk in audio_file.chunks():
                         tmp_file.write(chunk)
                     tmp_file_path = tmp_file.name
-                
+                converted_path = tmp_file_path.replace(
+                ".wav",
+                f"_{uuid.uuid4().hex}_converted.wav"
+            )
+
+                import ffmpeg
+                (
+                    ffmpeg
+                    .input(tmp_file_path)
+                    .output(converted_path, acodec='pcm_s16le', ar='16000', ac=1)
+                    .overwrite_output()
+                    .run()
+                )
+
                 print(f"Đang trích xuất embedding cho {name} - audio{i}...")
-                emb_array = extract_embedding(GLOBAL_MODEL, tmp_file_path)
-                
+                emb_array = extract_embedding(GLOBAL_MODEL, converted_path)
+
                 embeddings_to_save[f"audio{i}"] = np.array(emb_array, dtype=np.float32).tobytes()
                 print(f"✅ Trích xuất audio{i} thành công.")
 
