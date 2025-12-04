@@ -43,15 +43,6 @@ The system is designed for **Smart Home applications**, enabling password-free a
 
 ---
 
-## Video Demo
-
-> Add your system’s demo video here. For example:
-> ```md
-> [![Video Demo](images/video_thumbnail.png)](video/demo.mp4)
-> ```
-
----
-
 ## System Architecture
 
 ### **Frontend**
