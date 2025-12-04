@@ -30,10 +30,10 @@ The system is designed for **Smart Home applications**, enabling password-free a
 
 ## System Illustration
 
-> ```md
+
 > ![Registration Workflow](img/figure_17.png)
 > ![Usage Workflow](img/figure_18.png)
-> ```
+
 
 ---
 
