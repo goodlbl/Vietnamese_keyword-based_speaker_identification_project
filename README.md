@@ -30,12 +30,6 @@ The system is designed for **Smart Home applications**, enabling password-free a
 
 ## System Illustration
 
-> You may add system illustrations here.  
-> Create the folder:  
-> ```
-> /images
-> ```  
-> Then insert the images:
 > ```md
 > ![Figure17](images/figure_17.png)
 > ![Figure18](images/figure_18.png)
