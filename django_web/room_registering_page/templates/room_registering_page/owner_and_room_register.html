@@ -1,12 +1,9 @@
 {% extends 'base.html' %}
-{% load i18n %}
 {% load static %}
 
-{% block title %}{% trans "Đăng ký căn hộ" %}{% endblock %}
+{% block title %}Đăng ký căn hộ{% endblock %}
 
 {% block extra_css %}
-    <script src="{% url 'javascript-catalog' %}"></script>
-
 <style>
     body {
         background-image: url("{% static 'images/background.jpg' %}");
@@ -51,7 +48,6 @@
     .input-group {
         width: 100%;
         text-align: center;
-        margin: 15px 0;
     }
 
     .input-group input {
@@ -178,59 +174,59 @@
         action="{% url 'room_registering_page:create_owner_and_room' %}">
         {% csrf_token %}
             
-            <h3 class="page-header">{% trans "Đăng ký chủ hộ" %}</h3>
+            <h3 class="page-header">Đăng ký chủ hộ</h3>
 
             <div class="input-group">
-                <input type="text" name="name" id="username" placeholder="{% trans 'Nhập tên của bạn...' %}" required>
+                <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
             </div>
 
             <div class="instruction-highlight">
-                {% trans "Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền" %}
+                Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền
             </div>
 
             <div class="audio-section">
                 <div class="audio-box" id="rec1">
                     <h3>“Quad team ơi”</h3>
-                    <button type="button" onclick="toggleRecord(1)">{% trans "Bắt đầu thu" %}</button>
+                    <button type="button" onclick="toggleRecord(1)">Bắt đầu thu</button>
                     <audio controls id="player1" style="display:none;"></audio>
                     <input type="file" id="audioInput1" name="audio1" style="display:none;" accept="audio/*">
                 </div>
                 <div class="audio-box" id="rec2">
                     <h3>“Mở lên Quad team ơi”</h3>
-                    <button type="button" onclick="toggleRecord(2)">{% trans "Bắt đầu thu" %}</button>
+                    <button type="button" onclick="toggleRecord(2)">Bắt đầu thu</button>
                     <audio controls id="player2" style="display:none;"></audio>
                     <input type="file" id="audioInput2" name="audio2" style="display:none;" accept="audio/*">
                 </div>
                 <div class="audio-box" id="rec3">
                     <h3>“Quad team ơi thế nào”</h3>
-                    <button type="button" onclick="toggleRecord(3)">{% trans "Bắt đầu thu" %}</button>
+                    <button type="button" onclick="toggleRecord(3)">Bắt đầu thu</button>
                     <audio controls id="player3" style="display:none;"></audio>
                     <input type="file" id="audioInput3" name="audio3" style="display:none;" accept="audio/*">
                 </div>
             </div>
 
             <div class="instruction-highlight">
-                {% trans "Nhập mã căn hộ và mật khẩu muốn đăng ký" %}
+                Nhập mã căn hộ và mật khẩu muốn đăng ký
             </div>
 
-            <div id="formMessage" style="color: red; font-weight: bold; margin-bottom: 10px; min-height: 24px;"></div>
+            
 
             <div class="input-group">
                 <input 
                     id="room_number"
                     type="text"
                     name="room_number"
-                    placeholder="{% trans 'Nhập mã căn hộ (tối đa 10 ký tự)' %}"
+                    placeholder="Nhập mã căn hộ (tối đa 10 ký tự)"
                     maxlength="10"
                     autocomplete="off"
                     required
                 />
                 <br>
-                <input type="password" name="password" placeholder="{% trans 'Nhập mật khẩu' %}" required>
+                <input type="password" name="password" placeholder="Nhập mật khẩu" required>
             </div>
-
-            <button type="submit" id="submitBtn" class="corner-button bottom-right">{% trans "Xác nhận" %}</button>
-            <a href="{% url 'main_page:home' %}" class="corner-button bottom-left">{% trans "Quay lại" %}</a>
+            <div id="formMessage" style="color: red; font-weight: bold; min-height: 24px;"></div>
+            <button type="submit" id="submitBtn" class="corner-button bottom-right">Xác nhận</button>
+            <a href="{% url 'main_page:home' %}" class="corner-button bottom-left">Quay lại</a>
 
     </form>
 </div>
@@ -247,7 +243,6 @@ document.getElementById('room_number').addEventListener('input', function () {
     }
 });
 
-// Submit form
 document.getElementById('ownerForm').addEventListener('submit', function(e){
     e.preventDefault();
 
@@ -262,12 +257,12 @@ document.getElementById('ownerForm').addEventListener('submit', function(e){
     const room = document.getElementById('room_number').value.trim();
     
     if(!username || !room) {
-        msgDiv.textContent = "{% trans 'Vui lòng điền đầy đủ thông tin.' %}";
+        msgDiv.textContent = "Vui lòng điền đầy đủ thông tin.";
         return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = "{% trans 'Đang xử lý...' %}";
+    submitBtn.textContent = "Đang xử lý...";
 
     const formData = new FormData(form);
 
@@ -282,22 +277,22 @@ document.getElementById('ownerForm').addEventListener('submit', function(e){
     .then(data => {
         if(data.success){
             msgDiv.style.color = 'green';
-            msgDiv.textContent = data.message || "{% trans 'Đăng ký thành công!' %}";
+            msgDiv.textContent = data.message || "Đăng ký thành công!";
             setTimeout(() => {
                 window.location.href = data.redirect_url;
             }, 1000);
         } else {
             msgDiv.style.color = 'red';
-            msgDiv.textContent = data.message || "{% trans 'Có lỗi xảy ra.' %}";
+            msgDiv.textContent = data.message || "Có lỗi xảy ra.";
             submitBtn.disabled = false;
-            submitBtn.textContent = "{% trans 'Xác nhận' %}";
+            submitBtn.textContent = "Xác nhận";
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        msgDiv.textContent = "{% trans 'Lỗi kết nối server.' %}";
+        msgDiv.textContent = "Lỗi kết nối server.";
         submitBtn.disabled = false;
-        submitBtn.textContent = "{% trans 'Xác nhận' %}";
+        submitBtn.textContent = "Xác nhận";
     });
 });
 
@@ -322,7 +317,6 @@ async function toggleRecord(id) {
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 input.files = dataTransfer.files;
-                // -----------------------------------------------------
 
                 audioBlobs[id] = blob;
                 const url = URL.createObjectURL(blob);
@@ -335,7 +329,7 @@ async function toggleRecord(id) {
 
             recorder.start();
             recorders[id] = recorder;
-            btn.textContent = gettext("Đang thu...");
+            btn.textContent = "Đang thu...";
             btn.classList.add("recording");
 
             setTimeout(() => {
@@ -343,19 +337,19 @@ async function toggleRecord(id) {
                     recorders[id].stop();
                     streams[id].getTracks().forEach(track => track.stop());
                     recorders[id] = null;
-                    btn.textContent = gettext("Bắt đầu thu"); 
+                    btn.textContent = "Bắt đầu thu"; 
                     btn.classList.remove("recording");
                 }
             }, 2500);
 
         } catch (err) {
-            alert("{% trans 'Không truy cập được micro: ' %}" + err.message);
+            alert("Không truy cập được micro: " + err.message);
         }
     } else {
         recorders[id].stop();
         streams[id].getTracks().forEach(track => track.stop());
         recorders[id] = null;
-        btn.textContent = gettext("Bắt đầu thu"); 
+        btn.textContent = "Bắt đầu thu"; 
         btn.classList.remove("recording");
     }
 }

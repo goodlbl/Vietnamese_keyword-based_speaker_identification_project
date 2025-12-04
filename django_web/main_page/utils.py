@@ -91,7 +91,7 @@ def extract_embedding(model, audio_path):
 
     mel_spec = torchaudio.transforms.MelSpectrogram(
         sample_rate=16000,
-        n_fft=512,
+        n_fft=400,
         hop_length=160,
         n_mels=80
     )(wav)
