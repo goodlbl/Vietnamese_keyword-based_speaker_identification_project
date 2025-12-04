@@ -1,12 +1,9 @@
 {% extends 'base.html' %}
-{% load i18n %}
 {% load static %}
 
-{% block title %}{% trans "Đăng ký thành viên" %}{% endblock %}
+{% block title %}Đăng ký thành viên{% endblock %}
 
 {% block extra_css %}
-    <script src="{% url 'javascript-catalog' %}"></script>
-
 <style>
     body {
         background-image: url("{% static 'images/background.jpg' %}");
@@ -176,39 +173,39 @@
         action="{% url 'member_registering_page:submit_all' %}">
         {% csrf_token %}
         
-        <h3 class="page-header">{% trans "Đăng ký thành viên" %}</h3>
+        <h3 class="page-header">Đăng ký thành viên</h3>
 
         <div class="name-input">
-            <input type="text" name="name" id="username" placeholder="{% trans 'Nhập tên của bạn...' %}" required>
+            <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
         </div>
 
         <div class="instruction" 
             style="color: #0e0246; 
-                    font-weight: bold; 
-                    font-size: 23px;
-                    text-align: center; 
-                    border-radius: 10px;
-                    max-width: 700px; 
-                    margin: 0px auto;">
-            {% trans "Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền" %}
+                   font-weight: bold; 
+                   font-size: 23px;
+                   text-align: center; 
+                   border-radius: 10px;
+                   max-width: 700px; 
+                   margin: 0px auto;">
+            Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền
         </div>
 
         <div class="audio-section">
             <div class="audio-box" id="rec1">
                 <h3>“Quad team ơi”</h3>
-                <button type="button" onclick="toggleRecord(1)">{% trans "Bắt đầu thu" %}</button>
+                <button type="button" onclick="toggleRecord(1)">Bắt đầu thu</button>
                 <audio controls id="player1" style="display:none;"></audio>
                 <input type="file" id="audioInput1" name="audio1" style="display:none;">
             </div>
             <div class="audio-box" id="rec2">
                 <h3>“Mở lên Quad team ơi”</h3>
-                <button type="button" onclick="toggleRecord(2)">{% trans "Bắt đầu thu" %}</button>
+                <button type="button" onclick="toggleRecord(2)">Bắt đầu thu</button>
                 <audio controls id="player2" style="display:none;"></audio>
                 <input type="file" id="audioInput2" name="audio2" style="display:none;">
             </div>
             <div class="audio-box" id="rec3">
                 <h3>“Quad team ơi thế nào”</h3>
-                <button type="button" onclick="toggleRecord(3)">{% trans "Bắt đầu thu" %}</button>
+                <button type="button" onclick="toggleRecord(3)">Bắt đầu thu</button>
                 <audio controls id="player3" style="display:none;"></audio>
                 <input type="file" id="audioInput3" name="audio3" style="display:none;">
             </div>
@@ -216,30 +213,30 @@
 
         <div class="instruction" 
             style="color: #0e0246; 
-                    font-weight: bold; 
-                    font-size: 23px;
-                    text-align: center; 
-                    border-radius: 10px;
-                    max-width: 800px; 
-                    margin: 20px auto;">
-            {% trans "Chọn các thiết bị được phép điều khiển" %}
+                   font-weight: bold; 
+                   font-size: 23px;
+                   text-align: center; 
+                   border-radius: 10px;
+                   max-width: 800px; 
+                   margin: 20px auto;">
+            Chọn các thiết bị được phép điều khiển
         </div>
 
         <div class="button-grid">
-            <button type="button" class="btn1 off" onclick="toggleBtn(1)">{% trans "Bếp" %}</button>
-            <button type="button" class="btn2 off" onclick="toggleBtn(2)">{% trans "Ti vi" %}</button>
-            <button type="button" class="btn3 off" onclick="toggleBtn(3)">{% trans "Máy lạnh" %}</button>
-            <button type="button" class="btn4 off" onclick="toggleBtn(4)">{% trans "Quạt" %}</button>
-            <button type="button" class="btn5 off" onclick="toggleBtn(5)">{% trans "Cửa" %}</button>
-            <button type="button" class="btn6 off" onclick="toggleBtn(6)">{% trans "Đèn" %}</button>
+            <button type="button" class="btn1 off" onclick="toggleBtn(1)">Bếp</button>
+            <button type="button" class="btn2 off" onclick="toggleBtn(2)">Ti vi</button>
+            <button type="button" class="btn3 off" onclick="toggleBtn(3)">Máy lạnh</button>
+            <button type="button" class="btn4 off" onclick="toggleBtn(4)">Quạt</button>
+            <button type="button" class="btn5 off" onclick="toggleBtn(5)">Cửa</button>
+            <button type="button" class="btn6 off" onclick="toggleBtn(6)">Đèn</button>
         </div>
 
         <input type="hidden" name="buttons" id="buttonsInput" value="[0,0,0,0,0,0]">
 
         <div id="formMessage" style="color: red; font-weight: bold; margin-top: 20px;"></div>
 
-        <button type="submit" class="corner-button bottom-right">{% trans "Đăng ký" %}</button>
-        <a href="{% url 'member_registering_page:go_back' %}" class="corner-button bottom-left">{% trans "Quay lại" %}</a>
+        <button type="submit" class="corner-button bottom-right">Đăng ký</button>
+        <a href="{% url 'member_registering_page:go_back' %}" class="corner-button bottom-left">Quay lại</a>
 
     </form>
 </div>
@@ -323,7 +320,7 @@ async function toggleRecord(id) {
 
             recorder.start();
             recorders[id] = recorder;
-            btn.textContent = gettext("Đang thu...");
+            btn.textContent = "Đang thu...";
             btn.classList.add("recording");
 
             setTimeout(() => {
@@ -331,7 +328,7 @@ async function toggleRecord(id) {
                     recorders[id].stop();
                     streams[id].getTracks().forEach(track => track.stop());
                     recorders[id] = null;
-                    btn.textContent = gettext("Bắt đầu thu");
+                    btn.textContent = "Bắt đầu thu";
                     btn.classList.remove("recording");
                 }
             }, 2500);
@@ -343,7 +340,7 @@ async function toggleRecord(id) {
         recorders[id].stop();
         streams[id].getTracks().forEach(track => track.stop());
         recorders[id] = null;
-        btn.textContent = gettext("Bắt đầu thu");
+        btn.textContent = "Bắt đầu thu";
         btn.classList.remove("recording");
     }
 }
