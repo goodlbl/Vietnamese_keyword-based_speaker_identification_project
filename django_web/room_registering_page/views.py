@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.contrib import messages
+from room_activity.models import RoomActivity
 
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
@@ -78,6 +79,12 @@ def create_owner_and_room(request):
         record.room = new_room.id
         record.save(update_fields=["room"])
         request.session['room_id'] = new_room.id
+
+        RoomActivity.objects.create(
+            user=record,
+            room=new_room,
+            status='created'
+        )
 
         return JsonResponse({
             'success': True,

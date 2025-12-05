@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'main_page',
     'check_password',
     'action_room',
+    'room_activity',
 ]
 
 MIDDLEWARE = [
@@ -117,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'vi'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
 
 USE_TZ = True

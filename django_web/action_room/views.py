@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 import numpy as np, json, os, tempfile
 from sklearn.metrics.pairwise import cosine_similarity
 from django.utils.translation import gettext_lazy as _
-
+from room_activity.models import RoomActivity
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
 except ImportError:
@@ -96,7 +96,15 @@ def verify_voice(request):
 
     if best_result and best_result["is_match"]:
         matched_member = members.filter(name=best_result["name"]).first()
-
+        if matched_member:
+            try:
+                RoomActivity.objects.create(
+                    user=matched_member, 
+                    room=room,          
+                    status='access'   
+                )
+            except Exception as e:
+                print(f"⚠️ Lỗi ghi log RoomActivity: {e}")
         try:
             raw_buttons = matched_member.buttons
             rights = json.loads(raw_buttons) if isinstance(raw_buttons, str) else raw_buttons
@@ -105,7 +113,16 @@ def verify_voice(request):
 
         functions = [DEVICE_NAMES[i] for i, val in enumerate(rights) if val == 1]
     else:
-        functions = []
+        try:
+            RoomActivity.objects.create(
+                user=None,         
+                room=room,          
+                status='denied'   
+            )
+        except Exception as e:
+            print(f"⚠️ Lỗi ghi log RoomActivity (Stranger): {e}")
+
+        functions = [] 
 
     return JsonResponse({
         "results": results,  

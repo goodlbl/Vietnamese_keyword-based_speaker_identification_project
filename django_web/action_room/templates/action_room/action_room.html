@@ -90,7 +90,7 @@
         text-shadow: 0 0 5px rgba(15, 6, 54, 0.3);
     }
     .page-subtitle {
-        font-size: 1.125rem; /* 18px */
+        font-size: 1.125rem; 
         font-weight: 500; 
         color: #374151; 
         line-height: 1.6; 
@@ -188,14 +188,31 @@
 
 <div class="container"> 
     <div class="con">
-        <h2 class="smart-home-name">
-            <span class="room-label">Căn hộ số:</span>
-            <span class="room-id">{{ room.room_number }}</span> 
-        </h2>
-        <h2 class="smart-owner">
-            <span class="room-owner">Chủ hộ:</span>
-            <span class="owner-name">{{ room.owner.name }}</span> 
-        </h2>
+        <div class="relative flex items-center justify-center gap-3 mb-8 -mt-6 flex-wrap">
+
+            <h2 class="smart-home-name !mb-0 !mt-0"> 
+                <span class="room-label">Căn hộ số:</span>
+                <span class="room-id">{{ room.room_number }}</span> 
+            </h2>
+
+            <h2 class="smart-owner !mb-0 !mt-0">
+                <span class="room-owner">Chủ hộ:</span>
+                <span class="owner-name">{{ room.owner.name }}</span> 
+            </h2>
+
+            <a href="{% url 'room_activity:history_view' room.id %}" 
+            title="Xem lịch sử hoạt động"
+            class="absolute right-0 top-1/2 -translate-y-1/2 
+                    p-2.5 rounded-full transition-all duration-300 flex-shrink-0
+                    text-[#0f0636] bg-white/20 border border-white/40 shadow-sm backdrop-blur-sm
+                    hover:bg-white/60 hover:text-[#184a9b] hover:shadow-md hover:-translate-y-0.5">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </a>
+
+        </div>
         <h1 class="smart-home-title">
             <span class="smart-home-text">Trợ Lý Ảo Căn Hộ</span>
         </h1>
