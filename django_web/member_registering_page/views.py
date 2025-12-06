@@ -5,7 +5,6 @@ from room_registering_page.models import Room
 import json, io, numpy as np
 import os, tempfile
 import uuid
-from room_activity.models import RoomActivity
 
 try:
     from main_page.utils import GLOBAL_MODEL, extract_embedding, DEVICE
@@ -58,22 +57,29 @@ def submit_all(request):
         embeddings_to_save = {}
         
         for i in range(1, 4):
-                audio_file = request.FILES.get(f'audio{i}')
-                if not audio_file:
-                    continue
-                tmp_file_path = None
-                try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
-                        for chunk in audio_file.chunks():
-                            tmp_file.write(chunk)
-                        tmp_file_path = tmp_file.name
-                    emb_array = extract_embedding(GLOBAL_MODEL, tmp_file_path)
-                    embeddings_to_save[f"audio{i}"] = np.array(emb_array, dtype=np.float32).tobytes()
-                except Exception:
-                    pass
-                finally:
-                    if tmp_file_path and os.path.exists(tmp_file_path):
-                        os.remove(tmp_file_path)
+            audio_file = request.FILES.get(f'audio{i}')
+            if not audio_file:
+                continue 
+
+            tmp_file_path = None
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
+                    for chunk in audio_file.chunks():
+                        tmp_file.write(chunk)
+                    tmp_file_path = tmp_file.name
+
+                print(f"Đang trích xuất embedding cho {name} - audio{i}...")
+                emb_array = extract_embedding(GLOBAL_MODEL, tmp_file_path)
+
+                embeddings_to_save[f"audio{i}"] = np.array(emb_array, dtype=np.float32).tobytes()
+                print(f"✅ Trích xuất audio{i} thành công.")
+
+            except Exception as e:
+                print(f"🔥 Lỗi khi trích xuất embedding cho audio{i}: {e}")
+            
+            finally:
+                if tmp_file_path and os.path.exists(tmp_file_path):
+                    os.remove(tmp_file_path)
 
         if embeddings_to_save:
             update_fields = []
@@ -85,16 +91,7 @@ def submit_all(request):
             print(f"✅ Đã lưu {len(update_fields)} embeddings vào DB cho {name}")
         else:
             print(f"⚠️ Không có file audio nào được xử lý cho {name}.")
-        try:
-            room_instance = Room.objects.get(pk=room_id)
-            
-            RoomActivity.objects.create(
-                user=member,         
-                room=room_instance,  
-                status='created'
-            )
-        except Room.DoesNotExist:
-            print(f"⚠️ Không tìm thấy Room ID {room_id}, không thể tạo Activity log.")
+
         redirect_url = f"/action_room/{room_id}/"
         return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
