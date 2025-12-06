@@ -90,7 +90,7 @@
         text-shadow: 0 0 5px rgba(15, 6, 54, 0.3);
     }
     .page-subtitle {
-        font-size: 1.125rem; /* 18px */
+        font-size: 1.125rem; 
         font-weight: 500; 
         color: #374151; 
         line-height: 1.6; 
@@ -188,14 +188,19 @@
 
 <div class="container"> 
     <div class="con">
-        <h2 class="smart-home-name">
-            <span class="room-label">Căn hộ số:</span>
-            <span class="room-id">{{ room.room_number }}</span> 
-        </h2>
-        <h2 class="smart-owner">
-            <span class="room-owner">Chủ hộ:</span>
-            <span class="owner-name">{{ room.owner.name }}</span> 
-        </h2>
+        <div class="relative flex items-center justify-center gap-3 mb-8 -mt-6 flex-wrap">
+
+            <h2 class="smart-home-name !mb-0 !mt-0"> 
+                <span class="room-label">Căn hộ số:</span>
+                <span class="room-id">{{ room.room_number }}</span> 
+            </h2>
+
+            <h2 class="smart-owner !mb-0 !mt-0">
+                <span class="room-owner">Chủ hộ:</span>
+                <span class="owner-name">{{ room.owner.name }}</span> 
+            </h2>
+
+        </div>
         <h1 class="smart-home-title">
             <span class="smart-home-text">Trợ Lý Ảo Căn Hộ</span>
         </h1>

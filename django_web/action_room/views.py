@@ -13,7 +13,7 @@ except ImportError:
     GLOBAL_MODEL = None
     extract_embedding = None
 
-VOICE_THRESHOLD = 0.4
+VOICE_THRESHOLD = 0.52
 
 
 DEVICE_NAMES = [
